@@ -43,8 +43,12 @@ const TicketTable: React.FC<{ tickets: WorkOrder[]; onSelect?: (id: string) => v
               <td><span className="ot-tech">{t.createdBy || 'operator'}</span></td>
               <td><span className="ot-ts">{t.createdAt ? new Date(t.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'}</span></td>
               <td><span className="ot-ts">{t.closedAt ? new Date(t.closedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'}</span></td>
-              <td><span className={`ot-dur ${durClass(t.duration)}`}>{formatDuration(t.createdAt, t.closedAt)}</span></td>
-              <td><span className={`ot-badge ${t.status}`}>{t.status === 'in_progress' && <span className="ot-live-dot" />}{WO_STATUS_LABEL[t.status as any]}</span></td>
+              <td>
+                <span className={`ot-dur ${durClass(t.closedAt ? Math.round((new Date(t.closedAt).getTime() - new Date(t.createdAt).getTime()) / 60000) : null)}`}>
+                  {formatDuration(t.createdAt, t.closedAt)}
+                </span>
+              </td>
+              <td><span className={`ot-badge ${t.status}`}>{t.status === 'in_progress' && <span className="ot-live-dot" />}{WO_STATUS_LABEL[t.status]}</span></td>
               <td>
                 <button onClick={(e) => { e.stopPropagation(); onSelect && onSelect(t.id); }} className="btn btn-sm btn-outline" style={{ fontSize: '10px', padding: '4px 8px' }}>Ver</button>
               </td>

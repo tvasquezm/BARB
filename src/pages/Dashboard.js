@@ -16,19 +16,21 @@ const Dashboard = () => {
     // Cálculos de KPIs basados en el estado actual de los tickets
     const total = tickets.length;
     const openCount = tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length;
-    const closedCount = tickets.filter(t => t.status === 'done' || t.status === 'closed' || t.status === 'completed').length;
+    const closedCount = tickets.filter(t => t.status === 'done' || t.status === 'closed').length;
     const mttr = computeMTTR(tickets);
     // Memorización de los tickets filtrados para optimizar el rendimiento
     const filtered = useMemo(() => filterTickets(tickets, { status: statusFilter, machineId: machineFilter, search }), [tickets, statusFilter, machineFilter, search]);
     // Cálculos para la sección inferior (Timeline y Top Machines)
     const timelineTickets = useMemo(() => {
-        return tickets.map(t => {
-            let d = t.duration;
-            if (d == null && t.createdAt && t.closedAt) {
-                d = Math.round((new Date(t.closedAt).getTime() - new Date(t.createdAt).getTime()) / 60000);
-            }
-            return { ...t, computedDuration: d };
-        }).filter(t => t.computedDuration != null).slice(0, 8);
+        return tickets
+            .map(t => {
+            const duration = t.closedAt
+                ? Math.round((new Date(t.closedAt).getTime() - new Date(t.createdAt).getTime()) / 60000)
+                : null;
+            return { ...t, computedDuration: duration };
+        })
+            .filter(t => t.computedDuration != null)
+            .slice(0, 8);
     }, [tickets]);
     const maxDuration = Math.max(...timelineTickets.map(t => t.computedDuration || 0), 60);
     const topMachines = useMemo(() => {
@@ -49,13 +51,13 @@ const Dashboard = () => {
         setTickets(prev => prev.map(t => t.id === id ? {
             ...t,
             status,
-            closedAt: (status === 'done' || status === 'closed' || status === 'completed') ? (t.closedAt || now) : t.closedAt
+            closedAt: (status === 'done' || status === 'closed') ? (t.closedAt || now) : t.closedAt
         } : t));
         // Actualizar el ticket seleccionado si el modal está abierto
         setSelectedTicket(prev => prev && prev.id === id ? {
             ...prev,
             status,
-            closedAt: (status === 'done' || status === 'closed' || status === 'completed') ? (prev.closedAt || now) : prev.closedAt
+            closedAt: (status === 'done' || status === 'closed') ? (prev.closedAt || now) : prev.closedAt
         } : prev);
     };
     const handleRefresh = () => {

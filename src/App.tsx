@@ -11,7 +11,7 @@ import MachineMemory from './pages/MachineMemory'
 import Report from './pages/Report'
 import { useAppContext } from './context/AppContext'
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { user } = useAppContext()
   return user ? children : <Navigate to="/login" replace />
 }
@@ -23,9 +23,9 @@ export default function App() {
       <Route
         path="/"
         element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
+        <ProtectedRoute>
+          <Layout />
+        </ProtectedRoute>
         }
       >
         <Route index element={<Navigate to="dashboard" replace />} />

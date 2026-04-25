@@ -14,8 +14,14 @@ const defaultState = {
   docMessages: [] as Message[],
   debugMessages: [] as Message[],
   user: null,
-  apiBase: (import.meta.env.VITE_API_BASE as string) ?? '/api',
-  lmBase: (import.meta.env.VITE_LM_BASE as string) ?? '/lm',
+  apiBase:
+    (import.meta.env.VITE_API_URL as string | undefined) ??
+    (import.meta.env.VITE_API_BASE as string | undefined) ??
+    '/api',
+  lmBase:
+    (import.meta.env.VITE_LM_STUDIO_URL as string | undefined) ??
+    (import.meta.env.VITE_LM_BASE as string | undefined) ??
+    '/lm',
   loading: false,
 }
 

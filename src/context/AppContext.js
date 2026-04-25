@@ -13,8 +13,12 @@ const defaultState = {
     docMessages: [],
     debugMessages: [],
     user: null,
-    apiBase: import.meta.env.VITE_API_BASE ?? '/api',
-    lmBase: import.meta.env.VITE_LM_BASE ?? '/lm',
+    apiBase: import.meta.env.VITE_API_URL ??
+        import.meta.env.VITE_API_BASE ??
+        '/api',
+    lmBase: import.meta.env.VITE_LM_STUDIO_URL ??
+        import.meta.env.VITE_LM_BASE ??
+        '/lm',
     loading: false,
 };
 const AppContext = createContext(undefined);

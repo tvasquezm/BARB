@@ -1,6 +1,6 @@
 import React from 'react'
 import { WorkOrder } from '../types'
-import { WO_STATUSES, WO_STATUS_LABEL } from '../services/workOrders'
+import { WO_STATUSES, WO_STATUS_LABEL, type WOStatus } from '../services/workOrders'
 import { showToast } from './Toast'
 
 interface Props {
@@ -14,7 +14,7 @@ const TicketDetailModal: React.FC<Props> = ({ ticket, onClose, onUpdateStatus })
 
   const statusOrder = WO_STATUSES
 
-  const currentIndex = statusOrder.indexOf(ticket.status as any)
+  const currentIndex = statusOrder.indexOf(ticket.status as WOStatus)
 
   const advance = () => {
     const next = Math.min(statusOrder.length - 1, currentIndex + 1)
@@ -46,15 +46,15 @@ const TicketDetailModal: React.FC<Props> = ({ ticket, onClose, onUpdateStatus })
 
         <div className="modal-body" style={{ padding: 20 }}>
           <div className="ot-timeline-strip">
-            {statusOrder.filter(s => s !== 'on_hold').map((s, i) => {
+            {statusOrder.map((s, i) => {
               const done = i < currentIndex
               const active = s === ticket.status
-              const isLast = i === 3 // Ya que quitamos 'on_hold', quedan 4
+              const isLast = i === statusOrder.length - 1
               return (
                 <div key={s} className="ots-step">
                   {!isLast && <div className={`ots-line ${done || active ? 'done' : ''}`} />}
                   <div className={`ots-dot ${done ? 'done' : active ? 'active' : ''}`} />
-                  <div className="ots-label">{WO_STATUS_LABEL[s as any]}</div>
+                  <div className="ots-label">{WO_STATUS_LABEL[s]}</div>
                 </div>
               )
             })}
@@ -63,7 +63,7 @@ const TicketDetailModal: React.FC<Props> = ({ ticket, onClose, onUpdateStatus })
           <div className="ot-detail-grid">
             <div className="ot-detail-field"><div className="ot-detail-label">Máquina</div><div className="ot-detail-val">{ticket.machineId}</div></div>
             <div className="ot-detail-field"><div className="ot-detail-label">Técnico</div><div className="ot-detail-val">{ticket.createdBy || 'operator'}</div></div>
-            <div className="ot-detail-field"><div className="ot-detail-label">Estado</div><div className="ot-detail-val"><span className={`ot-badge ${ticket.status}`}>{WO_STATUS_LABEL[ticket.status as any]}</span></div></div>
+            <div className="ot-detail-field"><div className="ot-detail-label">Estado</div><div className="ot-detail-val"><span className={`ot-badge ${ticket.status}`}>{WO_STATUS_LABEL[ticket.status]}</span></div></div>
             <div className="ot-detail-field"><div className="ot-detail-label">Prioridad</div><div className="ot-detail-val" style={{ fontWeight: 600, color: ticket.priority === 'high' ? '#c0281e' : 'var(--amber)' }}>{ticket.priority === 'high' ? 'Alta' : 'Media'}</div></div>
           </div>
 
