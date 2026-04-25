@@ -1,0 +1,16 @@
+{
+  "colors": {
+    "primary": "#0F172A",
+    "secondary": "#64748B",
+    "tertiary": "#3B82F6",
+    "accent": "#10B981",
+    "warning": "#F59E0B",
+    "neutral": "#F8FAFC"
+  },
+  "typography": {
+    "h1": { "fontFamily": "Inter", "fontSize": "2.25rem", "fontWeight": 700 },
+    "body": { "fontFamily": "Inter", "fontSize": "1rem" }
+  },
+  "rounded": { "md": "12px" },
+  "spacing": { "md": "16px" }
+}

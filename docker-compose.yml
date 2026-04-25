@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Base de Datos Relacional para Usuarios y Máquinas
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: barb_admin
+      POSTGRES_PASSWORD: barb_password123
+      POSTGRES_DB: barb_database
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  # Tu API en Python (RAG y Microservicios)
+  backend:
+    build: ./backend
+    ports:
+      - "9000:8001"
+    environment:
+      - DATABASE_URL=postgresql://barb_admin:barb_password123@db:5432/barb_database
+    volumes:
+      # Sincroniza tu código en vivo
+      - ./backend:/app
+    depends_on:
+      - db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Tu Interfaz Web Estática
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

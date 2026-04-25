@@ -1,0 +1,2413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARB — Plant Maintenance System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
+
+/* ── CSS Variables (light default) ─────────────────────────────── */
+:root {
+  --bg:        #f4f2ee;
+  --bg2:       #eae7e1;
+  --surface:   #ffffff;
+  --surface2:  #f9f8f5;
+  --border:    #e2ddd7;
+  --border2:   #ccc5bb;
+  --ink:       #1a1814;
+  --ink2:      #5a544a;
+  --ink3:      #9e9589;
+  --accent:    #c8440a;
+  --accent-bg: #fff3ee;
+  --blue:      #1a5fa8;
+  --blue-bg:   #eef4fd;
+  --blue-dark: #1347822;
+  --green:     #1a7a50;
+  --green-bg:  #edf7f2;
+  --amber:     #a06a00;
+  --amber-bg:  #fef8ee;
+  --purple:    #5e3db3;
+  --purple-bg: #f2effe;
+  --red-bg:    #fdf0ef;
+  --mono:      'DM Mono', monospace;
+  --sans:      'DM Sans', sans-serif;
+  --serif:     'Fraunces', serif;
+  --radius:    12px;
+  --radius-sm: 8px;
+  --shadow:    0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+[data-theme="dark"] {
+  --bg:        #111318;
+  --bg2:       #181c24;
+  --surface:   #1e2230;
+  --surface2:  #252a38;
+  --border:    #2e3450;
+  --border2:   #3d4460;
+  --ink:       #e4e8f0;
+  --ink2:      #8890a4;
+  --ink3:      #4a5168;
+  --accent-bg: rgba(200,68,10,0.15);
+  --blue-bg:   rgba(26,95,168,0.15);
+  --green-bg:  rgba(26,122,80,0.15);
+  --amber-bg:  rgba(160,106,0,0.15);
+  --purple-bg: rgba(94,61,179,0.15);
+  --red-bg:    rgba(192,40,30,0.15);
+  --shadow:    0 2px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+/* ── Reset & Base ─────────────────────────────────────────────── */
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; overflow:hidden; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  transition: background 0.25s, color 0.25s;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+input,textarea,select,button { font-family: var(--sans); }
+
+/* ── Screens ──────────────────────────────────────────────────── */
+.screen { display:none; flex-direction:column; height:100vh; }
+.screen.active { display:flex; }
+
+/* ── TOP BAR ──────────────────────────────────────────────────── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.topbar-left { display:flex; align-items:center; gap:12px; }
+.back-btn {
+  width:34px; height:34px; border-radius:8px; border:none;
+  background:transparent; cursor:pointer; color:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; transition:background 0.15s;
+}
+.back-btn:hover { background:var(--surface2); }
+.topbar-logo { display:flex; align-items:center; gap:8px; }
+.logo-mark {
+  font-family: var(--serif); font-weight:700; font-size:18px;
+  color:#fff; background:var(--accent);
+  padding:2px 9px; border-radius:5px; letter-spacing:-0.01em;
+}
+.topbar-title { font-size:15px; font-weight:600; color:var(--ink); }
+.topbar-right { display:flex; align-items:center; gap:4px; }
+.icon-btn {
+  width:36px; height:36px; border-radius:8px; border:none;
+  background:transparent; cursor:pointer; color:var(--ink2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; transition:background 0.15s, color 0.15s;
+}
+.icon-btn:hover { background:var(--surface2); color:var(--ink); }
+.icon-btn svg { width:18px; height:18px; }
+
+/* ── LOGIN SCREEN ─────────────────────────────────────────────── */
+#screen-login {
+  justify-content: center;
+  align-items: center;
+  background: var(--bg);
+}
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+}
+.login-icon { font-size: 52px; text-align:center; margin-bottom: 12px; }
+.login-title {
+  font-family: var(--serif); font-size: 28px; font-weight:700;
+  text-align:center; color:var(--ink); margin-bottom: 4px;
+}
+.login-sub { text-align:center; color:var(--ink3); font-size:13px; margin-bottom: 32px; }
+.form-field { margin-bottom: 14px; }
+.form-input {
+  width:100%; padding:12px 14px; border-radius:var(--radius-sm);
+  border:1px solid var(--border); background:var(--surface2);
+  color:var(--ink); font-size:14px; outline:none;
+  transition:border-color 0.15s;
+}
+.form-input:focus { border-color:var(--blue); }
+.form-input::placeholder { color:var(--ink3); }
+.form-select {
+  width:100%; padding:10px 14px; border-radius:var(--radius-sm);
+  border:1px solid var(--border); background:var(--surface2);
+  color:var(--ink); font-size:13px; outline:none; cursor:pointer;
+}
+.btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:8px; padding:12px 20px; border-radius:var(--radius-sm);
+  font-size:14px; font-weight:600; cursor:pointer; border:none;
+  transition:all 0.15s; font-family:var(--sans);
+}
+.btn-primary { background:var(--blue); color:#fff; width:100%; }
+.btn-primary:hover { background:#1347a8; }
+.btn-accent  { background:var(--accent); color:#fff; }
+.btn-accent:hover { background:#b03a07; }
+.btn-green   { background:var(--green); color:#fff; }
+.btn-green:hover { background:#145e3d; }
+.btn-outline {
+  background:transparent; color:var(--ink2);
+  border:1px solid var(--border);
+}
+.btn-outline:hover { background:var(--surface2); }
+.btn-sm { padding:8px 14px; font-size:12px; }
+.btn-lg { padding:14px 24px; font-size:15px; }
+.btn svg { width:16px; height:16px; }
+
+/* ── MENU SCREEN ──────────────────────────────────────────────── */
+.menu-body { flex:1; padding:32px; overflow-y:auto; }
+.page-title {
+  font-family:var(--serif); font-size:28px; font-weight:700;
+  color:var(--ink); margin-bottom:24px;
+}
+.menu-grid { display:flex; flex-direction:column; gap:14px; max-width:600px; }
+.menu-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:28px;
+  cursor:pointer; text-align:left; width:100%;
+  transition:all 0.2s; box-shadow:var(--shadow);
+  display:flex; align-items:flex-start; gap:20px;
+}
+.menu-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-1px); border-color:var(--border2); }
+.menu-card-icon {
+  width:52px; height:52px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; flex-shrink:0;
+}
+.menu-card-icon.blue   { background:var(--blue-bg); }
+.menu-card-icon.orange { background:var(--accent-bg); }
+.menu-card-icon.green  { background:var(--green-bg); }
+.menu-card-icon.purple { background:var(--purple-bg); }
+.menu-card-icon.red    { background:var(--red-bg); }
+.menu-card-text h3 {
+  font-size:18px; font-weight:600; color:var(--ink); margin-bottom:4px;
+}
+.menu-card-text p { font-size:13px; color:var(--ink2); line-height:1.5; }
+
+/* ── TWO-PANEL LAYOUT ─────────────────────────────────────────── */
+.two-panel { display:flex; flex:1; overflow:hidden; }
+.panel-left {
+  width:300px; flex-shrink:0; background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column; overflow-y:auto;
+  padding:20px;
+}
+.panel-right { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.panel-section { margin-bottom:20px; }
+.panel-label {
+  font-family:var(--mono); font-size:9px; font-weight:500;
+  color:var(--ink3); letter-spacing:0.14em; text-transform:uppercase;
+  margin-bottom:10px; display:block;
+}
+
+/* Discipline pills */
+.disc-list { display:flex; flex-direction:column; gap:6px; }
+.disc-pill {
+  display:flex; align-items:center; gap:10px; padding:10px 12px;
+  border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--surface2); cursor:pointer; transition:all 0.12s;
+  font-size:13px; font-weight:500; color:var(--ink2); text-align:left;
+  width:100%;
+}
+.disc-pill:hover { border-color:var(--border2); }
+.disc-pill.active { border-width:1.5px; }
+.disc-pill.active[data-d="electrical"]    { background:var(--amber-bg); border-color:var(--amber); color:var(--amber); }
+.disc-pill.active[data-d="mechanical"]    { background:var(--blue-bg); border-color:var(--blue); color:var(--blue); }
+.disc-pill.active[data-d="hydraulic"]     { background:var(--blue-bg); border-color:#0e7490; color:#0e7490; }
+.disc-pill.active[data-d="pneumatic"]     { background:var(--purple-bg); border-color:var(--purple); color:var(--purple); }
+.disc-pill.active[data-d="automation"]    { background:var(--green-bg); border-color:var(--green); color:var(--green); }
+.disc-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+[data-d="electrical"] .disc-dot  { background:var(--amber); }
+[data-d="mechanical"] .disc-dot  { background:var(--blue); }
+[data-d="hydraulic"]  .disc-dot  { background:#0e7490; }
+[data-d="pneumatic"]  .disc-dot  { background:var(--purple); }
+[data-d="automation"] .disc-dot  { background:var(--green); }
+
+/* Machine selection list */
+.machine-sel-list { display:flex; flex-direction:column; gap:5px; }
+.machine-sel-item {
+  display:flex; align-items:center; gap:8px; padding:9px 11px;
+  border-radius:var(--radius-sm); border:1px solid transparent;
+  background:transparent; cursor:pointer; transition:all 0.12s;
+  font-size:12px; text-align:left; width:100%; color:var(--ink2);
+}
+.machine-sel-item:hover { background:var(--surface2); border-color:var(--border); }
+.machine-sel-item.active { background:var(--blue-bg); border-color:var(--blue); color:var(--blue); }
+.machine-sel-item.active .msi-name { color:var(--blue); }
+.msi-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.msi-dot.ok       { background:#3ecf8e; }
+.msi-dot.warn     { background:var(--amber); }
+.msi-dot.maintain { background:var(--blue); }
+.msi-name { font-weight:500; font-size:11px; color:var(--ink); }
+.msi-model { font-size:10px; color:var(--ink3); font-family:var(--mono); }
+
+/* ── CHAT AREA ────────────────────────────────────────────────── */
+.context-tags {
+  padding:10px 20px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  background:var(--surface); min-height:42px; flex-shrink:0;
+}
+.ctx-tag {
+  display:inline-flex; align-items:center; gap:4px;
+  font-family:var(--mono); font-size:10px; font-weight:500;
+  padding:3px 9px; border-radius:4px;
+}
+.ctx-tag.disc-el   { background:var(--amber-bg); color:var(--amber); }
+.ctx-tag.disc-me   { background:var(--blue-bg); color:var(--blue); }
+.ctx-tag.disc-hy   { background:var(--blue-bg); color:#0e7490; }
+.ctx-tag.disc-pn   { background:var(--purple-bg); color:var(--purple); }
+.ctx-tag.disc-au   { background:var(--green-bg); color:var(--green); }
+.ctx-tag.machine   { background:var(--surface2); color:var(--ink2); border:1px solid var(--border); }
+.ctx-tag.plant     { background:var(--surface2); color:var(--ink2); border:1px solid var(--border); }
+.ctx-empty         { font-size:12px; color:var(--ink3); font-style:italic; }
+
+.chat-messages {
+  flex:1; overflow-y:auto; padding:24px;
+  display:flex; flex-direction:column; gap:16px;
+}
+.chat-empty {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center; padding:40px; color:var(--ink3);
+}
+.chat-empty-icon { font-size:48px; margin-bottom:16px; opacity:0.5; }
+.chat-empty h3 { font-size:16px; color:var(--ink2); margin-bottom:8px; font-weight:500; }
+.chat-empty p  { font-size:13px; max-width:320px; line-height:1.6; }
+.chat-empty-meta {
+  margin-top:16px; font-size:12px; color:var(--ink3);
+  background:var(--surface2); border-radius:var(--radius-sm);
+  padding:12px 16px; border:1px solid var(--border);
+  text-align:left; max-width:320px;
+}
+.chat-empty-meta p { margin-bottom:4px; }
+
+/* Messages */
+.msg { display:flex; gap:10px; max-width:760px; }
+.msg.user { flex-direction:row-reverse; align-self:flex-end; }
+.msg.bot  { align-self:flex-start; }
+.msg-avatar {
+  width:30px; height:30px; border-radius:8px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:10px; font-weight:500;
+}
+.msg-avatar.bot  { background:var(--ink); color:#fff; }
+.msg-avatar.user { background:var(--blue); color:#fff; }
+.msg-bubble {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:13px 16px;
+  font-size:13.5px; line-height:1.7; color:var(--ink);
+  max-width:640px;
+}
+.msg.user .msg-bubble { background:var(--blue); color:#fff; border-color:var(--blue); }
+.msg-time { font-family:var(--mono); font-size:10px; color:var(--ink3); margin-top:4px; }
+.msg.user .msg-time { text-align:right; }
+.msg-sources {
+  margin-top:10px; padding-top:10px; border-top:1px solid var(--border);
+  display:flex; flex-wrap:wrap; gap:5px; align-items:center;
+}
+.src-chip {
+  display:inline-flex; align-items:center; gap:3px;
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--blue); border-radius:4px; padding:2px 7px;
+  font-family:var(--mono); font-size:10px;
+}
+.thinking { display:flex; gap:4px; align-items:center; padding:4px 0; }
+.thinking span {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--ink3); animation:tp 1.2s ease-in-out infinite;
+}
+.thinking span:nth-child(2) { animation-delay:.2s; }
+.thinking span:nth-child(3) { animation-delay:.4s; }
+@keyframes tp { 0%,80%,100%{opacity:.25} 40%{opacity:1} }
+
+/* Suggested questions */
+.suggested-q { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+.sq-btn {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:16px; padding:5px 12px; font-size:11px;
+  cursor:pointer; color:var(--ink2); transition:all 0.12s;
+}
+.sq-btn:hover { border-color:var(--blue); color:var(--blue); }
+
+/* Input zone */
+.input-zone {
+  padding:14px 20px 18px; border-top:1px solid var(--border);
+  background:var(--surface); flex-shrink:0;
+}
+.input-tags {
+  display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;
+}
+.input-wrap {
+  display:flex; gap:10px; align-items:flex-end;
+  background:var(--surface2); border:1.5px solid var(--border);
+  border-radius:var(--radius); padding:10px 14px;
+  transition:border-color 0.15s;
+}
+.input-wrap:focus-within { border-color:var(--blue); }
+#doc-input, #debug-input {
+  flex:1; background:transparent; border:none; outline:none;
+  color:var(--ink); font-size:13px; resize:none; max-height:100px; line-height:1.5;
+}
+#doc-input::placeholder, #debug-input::placeholder { color:var(--ink3); }
+.send-btn {
+  width:34px; height:34px; border-radius:8px; border:none;
+  background:var(--blue); color:#fff; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.15s; flex-shrink:0;
+}
+.send-btn:hover { background:#1347a8; transform:scale(1.05); }
+.send-btn:disabled { background:var(--border); color:var(--ink3); transform:none; cursor:not-allowed; }
+.input-hint { font-family:var(--mono); font-size:10px; color:var(--ink3); margin-top:6px; }
+
+/* ── MACHINES SCREEN ──────────────────────────────────────────── */
+.machines-body { flex:1; padding:24px; overflow-y:auto; }
+.machine-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; max-width:900px; }
+.machine-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:22px; cursor:pointer;
+  transition:all 0.2s; box-shadow:var(--shadow); text-align:left;
+}
+.machine-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-1px); border-color:var(--border2); }
+.mc-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+.mc-icon {
+  width:48px; height:48px; border-radius:10px; background:var(--surface2);
+  border:1px solid var(--border); display:flex; align-items:center;
+  justify-content:center; font-size:22px;
+}
+.mc-status {
+  font-size:11px; font-weight:500; padding:4px 10px; border-radius:12px;
+}
+.mc-status.operational { background:var(--green-bg); color:var(--green); }
+.mc-status.warning     { background:var(--amber-bg); color:var(--amber); }
+.mc-status.maintenance { background:var(--blue-bg); color:var(--blue); }
+.mc-status.error       { background:var(--red-bg); color:#c0281e; }
+.mc-name { font-size:15px; font-weight:600; color:var(--ink); margin-bottom:4px; }
+.mc-model { font-size:12px; color:var(--ink2); }
+.mc-category { font-size:11px; color:var(--ink3); margin-top:6px; font-family:var(--mono); }
+
+/* ── DEBUG SCREEN ─────────────────────────────────────────────── */
+.debug-panel-left {
+  width:50%; background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:22px; display:flex; flex-direction:column; gap:14px;
+  overflow-y:auto;
+}
+.debug-machine-img {
+  flex:1; min-height:160px; background:var(--surface2);
+  border:1px solid var(--border); border-radius:var(--radius);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.debug-machine-img .big-icon { font-size:72px; margin-bottom:12px; }
+.debug-machine-img .dm-name { font-weight:600; color:var(--ink); }
+.debug-machine-img .dm-model { font-size:12px; color:var(--ink2); }
+.debug-specs {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:14px;
+}
+.debug-specs h4 { font-size:13px; font-weight:600; color:var(--ink); margin-bottom:10px; }
+.spec-row {
+  display:flex; justify-content:space-between; padding:5px 0;
+  border-bottom:1px solid var(--border); font-size:12px;
+}
+.spec-row:last-child { border-bottom:none; }
+.spec-label { color:var(--ink2); }
+.spec-val   { color:var(--ink); font-weight:500; font-family:var(--mono); font-size:11px; }
+.debug-panel-right {
+  flex:1; display:flex; flex-direction:column; overflow:hidden;
+}
+.debug-chat { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px; }
+.debug-mode-tag {
+  font-family:var(--mono); font-size:9px; font-weight:500;
+  background:var(--accent-bg); color:var(--accent);
+  padding:2px 7px; border-radius:3px; margin-bottom:8px; display:inline-block;
+}
+.debug-input-zone {
+  padding:14px 20px 18px; border-top:1px solid var(--border);
+  background:var(--surface); flex-shrink:0; display:flex; flex-direction:column; gap:10px;
+}
+.debug-input-row { display:flex; gap:10px; }
+.camera-btn {
+  width:44px; height:44px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--surface2); cursor:pointer; color:var(--ink2);
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.15s; flex-shrink:0;
+}
+.camera-btn:hover { border-color:var(--border2); color:var(--ink); }
+.report-btn {
+  width:100%; padding:12px; border-radius:var(--radius-sm);
+  background:var(--green); color:#fff; border:none; cursor:pointer;
+  font-size:13px; font-weight:600; display:flex; align-items:center;
+  justify-content:center; gap:8px; transition:background 0.15s;
+}
+.report-btn:hover { background:#145e3d; }
+
+/* Diagnostic response */
+.diagnostic-block {
+  background:var(--accent-bg); border:1px solid rgba(200,68,10,0.2);
+  border-radius:var(--radius-sm); padding:12px 14px; margin-top:8px;
+}
+.diag-title { font-size:11px; font-weight:600; color:var(--accent); margin-bottom:6px; font-family:var(--mono); letter-spacing:0.06em; }
+.diag-item { font-size:12px; color:var(--ink2); padding:3px 0; display:flex; align-items:flex-start; gap:6px; }
+.diag-item::before { content:'→'; color:var(--accent); flex-shrink:0; }
+.action-block {
+  background:var(--green-bg); border:1px solid rgba(26,122,80,0.2);
+  border-radius:var(--radius-sm); padding:12px 14px; margin-top:8px;
+}
+.action-title { font-size:11px; font-weight:600; color:var(--green); margin-bottom:6px; font-family:var(--mono); letter-spacing:0.06em; }
+.action-item { display:flex; align-items:flex-start; gap:8px; padding:4px 0; }
+.action-num { background:var(--green); color:#fff; width:16px; height:16px; border-radius:50%; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+.action-text { font-size:12px; color:var(--ink2); }
+.severity-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; padding:3px 9px; border-radius:12px; }
+.severity-badge.high   { background:var(--red-bg); color:#c0281e; }
+.severity-badge.medium { background:var(--amber-bg); color:var(--amber); }
+.severity-badge.low    { background:var(--green-bg); color:var(--green); }
+
+/* ── TOPOLOGY SCREEN ──────────────────────────────────────────── */
+.topology-body { flex:1; padding:20px; overflow:hidden; display:flex; flex-direction:column; }
+.topology-toolbar {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+}
+.topo-title { font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); }
+.topo-btns { display:flex; gap:8px; }
+.topo-canvas {
+  flex:1; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden; position:relative;
+}
+.topo-canvas svg { width:100%; height:100%; }
+
+/* ── REPORT SCREEN ────────────────────────────────────────────── */
+.report-body { flex:1; padding:24px; overflow-y:auto; }
+.report-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:32px; max-width:760px;
+  box-shadow:var(--shadow);
+}
+.report-card h2 {
+  font-family:var(--serif); font-size:22px; font-weight:700;
+  color:var(--ink); margin-bottom:24px;
+}
+.report-field { margin-bottom:20px; }
+.report-field label { display:block; font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px; }
+.report-field .rfield-val { font-size:13px; color:var(--ink2); }
+.report-textarea {
+  width:100%; padding:12px 14px; border-radius:var(--radius-sm);
+  border:1px solid var(--border); background:var(--surface2);
+  color:var(--ink); font-size:13px; outline:none; resize:vertical;
+  transition:border-color 0.15s; line-height:1.6;
+}
+.report-textarea:focus { border-color:var(--blue); }
+.report-actions { display:flex; gap:12px; padding-top:20px; }
+
+/* ── SETTINGS MODAL ───────────────────────────────────────────── */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.4); z-index:100;
+  align-items:center; justify-content:center; padding:24px;
+}
+.modal-overlay.open { display:flex; }
+.modal-box {
+  background:var(--surface); border-radius:18px;
+  box-shadow:var(--shadow-lg); width:100%; max-width:560px;
+  max-height:85vh; display:flex; flex-direction:column;
+  overflow:hidden;
+}
+.modal-header {
+  padding:20px 24px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  flex-shrink:0;
+}
+.modal-header h2 { font-family:var(--serif); font-size:20px; font-weight:700; color:var(--ink); }
+.modal-close {
+  width:32px; height:32px; border-radius:8px; border:none;
+  background:var(--surface2); cursor:pointer; color:var(--ink2);
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
+.modal-body { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:20px; }
+.settings-section { }
+.settings-section h3 { font-size:13px; font-weight:600; color:var(--ink); margin-bottom:10px; }
+.settings-block {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); overflow:hidden;
+}
+.settings-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; border-bottom:1px solid var(--border);
+}
+.settings-row:last-child { border-bottom:none; }
+.sr-label { font-size:13px; color:var(--ink); }
+.sr-sub   { font-size:11px; color:var(--ink3); margin-top:1px; }
+/* Toggle */
+.toggle {
+  position:relative; width:44px; height:24px; cursor:pointer;
+}
+.toggle input { display:none; }
+.toggle-track {
+  width:100%; height:100%; border-radius:12px;
+  background:var(--border2); transition:background 0.2s;
+  display:block;
+}
+.toggle input:checked + .toggle-track { background:var(--blue); }
+.toggle-thumb {
+  position:absolute; top:3px; left:3px;
+  width:18px; height:18px; border-radius:50%;
+  background:#fff; transition:transform 0.2s;
+  pointer-events:none;
+}
+.toggle input:checked ~ .toggle-thumb { transform:translateX(20px); }
+.modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; flex-shrink:0; }
+
+/* ── Status indicator ─────────────────────────────────────────── */
+.status-badge {
+  display:flex; align-items:center; gap:5px;
+  font-family:var(--mono); font-size:10px; color:var(--ink3);
+  background:var(--surface2); border:1px solid var(--border);
+  padding:4px 10px; border-radius:5px;
+}
+.status-dot { width:6px; height:6px; border-radius:50%; background:var(--border2); }
+.status-dot.online { background:#3ecf8e; box-shadow:0 0 4px #3ecf8e; }
+
+
+/* ── DASHBOARD ─────────────────────────────────────────────────── */
+.dashboard-body { flex:1; overflow-y:auto; padding:24px; }
+.dash-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+.kpi-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:20px; box-shadow:var(--shadow);
+}
+.kpi-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.kpi-icon { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.kpi-num { font-family:var(--mono); font-size:28px; font-weight:500; color:var(--ink); line-height:1; }
+.kpi-label { font-size:12px; color:var(--ink3); margin-top:3px; }
+.kpi-delta { font-size:11px; font-weight:500; margin-top:6px; }
+.kpi-delta.up   { color:var(--green); }
+.kpi-delta.down { color:#c0281e; }
+
+.dash-section-title {
+  font-size:13px; font-weight:600; color:var(--ink); margin-bottom:12px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.dash-section-title span { font-size:12px; font-weight:400; color:var(--ink3); }
+
+/* OT Tickets table */
+.ot-table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); margin-bottom:24px; }
+.ot-table { width:100%; border-collapse:collapse; }
+.ot-table thead { background:var(--surface2); }
+.ot-table th {
+  padding:10px 14px; text-align:left; font-size:11px; font-weight:600;
+  color:var(--ink3); font-family:var(--mono); letter-spacing:0.08em;
+  text-transform:uppercase; border-bottom:1px solid var(--border);
+}
+.ot-table td {
+  padding:12px 14px; font-size:12px; color:var(--ink2);
+  border-bottom:1px solid var(--border); vertical-align:middle;
+}
+.ot-table tr:last-child td { border-bottom:none; }
+.ot-table tr:hover td { background:var(--surface2); }
+.ot-num { font-family:var(--mono); font-size:11px; font-weight:500; color:var(--blue); }
+.ot-machine { font-weight:500; color:var(--ink); }
+.ot-tech { color:var(--ink3); font-size:11px; }
+.ot-ts { font-family:var(--mono); font-size:10px; color:var(--ink3); }
+.ot-dur { font-family:var(--mono); font-size:11px; font-weight:500; }
+.ot-dur.fast   { color:var(--green); }
+.ot-dur.medium { color:var(--amber); }
+.ot-dur.slow   { color:#c0281e; }
+.ot-badge { font-size:10px; font-weight:500; padding:3px 9px; border-radius:10px; display:inline-flex; align-items:center; gap:4px; }
+.ot-badge.created     { background:var(--surface2); color:var(--ink3); border:1px solid var(--border); }
+.ot-badge.assigned    { background:var(--blue-bg); color:var(--blue); }
+.ot-badge.in_progress { background:var(--amber-bg); color:var(--amber); }
+.ot-badge.on_hold     { background:var(--red-bg); color:#c0281e; }
+.ot-badge.completed   { background:var(--green-bg); color:var(--green); }
+.ot-badge.closed      { background:var(--surface2); color:var(--ink3); border:1px solid var(--border); }
+
+.ot-live-dot { width:7px; height:7px; border-radius:50%; background:var(--amber); display:inline-block; margin-right:4px; animation:blink 1.2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* Bottom row: timeline + top machines */
+.dash-bottom { display:grid; grid-template-columns:1fr 320px; gap:16px; }
+.timeline-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+.timeline-bar-wrap { display:flex; flex-direction:column; gap:10px; }
+.tl-row { display:flex; align-items:center; gap:10px; }
+.tl-label { font-size:11px; color:var(--ink2); width:110px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tl-bar-bg { flex:1; height:18px; background:var(--surface2); border-radius:4px; overflow:hidden; position:relative; }
+.tl-bar { height:100%; border-radius:4px; transition:width 0.5s ease; }
+.tl-bar-label { position:absolute; right:6px; top:50%; transform:translateY(-50%); font-family:var(--mono); font-size:9px; color:var(--ink3); }
+.tl-time { font-family:var(--mono); font-size:10px; color:var(--ink3); width:48px; flex-shrink:0; text-align:right; }
+
+.top-machines-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+.tm-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+.tm-row:last-child { border-bottom:none; }
+.tm-rank { font-family:var(--mono); font-size:11px; color:var(--ink3); width:18px; flex-shrink:0; }
+.tm-info { flex:1; }
+.tm-name { font-size:12px; font-weight:500; color:var(--ink); }
+.tm-count { font-size:11px; color:var(--ink3); }
+.tm-bar-mini { width:50px; height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+.tm-bar-fill { height:100%; border-radius:3px; background:var(--accent); }
+
+/* Filters bar */
+.dash-filters { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+.filter-select { padding:7px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--surface); color:var(--ink); font-size:12px; outline:none; cursor:pointer; }
+.filter-search { flex:1; max-width:260px; padding:7px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--surface); color:var(--ink); font-size:12px; outline:none; }
+.filter-search:focus { border-color:var(--blue); }
+.filter-search::placeholder { color:var(--ink3); }
+.dash-refresh-btn { display:flex; align-items:center; gap:5px; padding:7px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--surface); color:var(--ink2); cursor:pointer; font-size:12px; transition:all 0.15s; }
+.dash-refresh-btn:hover { border-color:var(--blue); color:var(--blue); }
+.spinning { animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* OT Detail modal */
+.ot-detail-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+.ot-detail-num { font-family:var(--mono); font-size:13px; color:var(--blue); font-weight:600; }
+.ot-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.ot-detail-field { }
+.ot-detail-label { font-size:10px; font-weight:600; color:var(--ink3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:3px; font-family:var(--mono); }
+.ot-detail-val   { font-size:13px; color:var(--ink); }
+.ot-timeline-strip { display:flex; align-items:center; gap:0; margin:16px 0; }
+.ots-step { display:flex; flex-direction:column; align-items:center; flex:1; position:relative; }
+.ots-dot  { width:12px; height:12px; border-radius:50%; border:2px solid var(--border2); background:var(--surface); z-index:1; }
+.ots-dot.done { background:var(--green); border-color:var(--green); }
+.ots-dot.active { background:var(--amber); border-color:var(--amber); }
+.ots-label { font-size:9px; color:var(--ink3); margin-top:5px; font-family:var(--mono); }
+.ots-line { position:absolute; top:5px; left:50%; right:-50%; height:2px; background:var(--border); z-index:0; }
+.ots-line.done { background:var(--green); }
+
+/* ── Toast ────────────────────────────────────────────────────── */
+#toast {
+  position:fixed; bottom:20px; right:20px;
+  background:var(--ink); color:#e8e4de;
+  border-radius:10px; padding:11px 16px; font-size:12px;
+  transform:translateY(70px); opacity:0; transition:all 0.3s; z-index:200;
+}
+#toast.show { transform:translateY(0); opacity:1; }
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div class="screen active" id="screen-login">
+  <div class="login-card">
+    <div class="login-icon">🏭</div>
+    <div class="login-title">BARB</div>
+    <div class="login-sub">Plant Maintenance System</div>
+    <div class="form-field">
+      <input class="form-input" type="text" id="login-user" placeholder="Username" value="carlos.tech" />
+    </div>
+    <div class="form-field">
+      <input class="form-input" type="password" id="login-pass" placeholder="Password" value="••••••••" />
+    </div>
+    <div class="form-field">
+      <select class="form-select" id="login-role">
+        <option value="technician">Technician</option>
+        <option value="engineer">Engineer</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="login()">Login</button>
+  </div>
+</div>
+
+<!-- ══════════════ MENU ══════════════ -->
+<div class="screen" id="screen-menu">
+  <!-- TopBar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <span class="logo-mark">BARB</span>
+        <span class="topbar-title">Plant Maintenance</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-badge"><div class="status-dot" id="api-dot"></div><span id="api-status-txt">API</span></div>
+      <button class="icon-btn" title="Language" onclick="toggleLang()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </button>
+      <button class="icon-btn" title="Toggle theme" onclick="toggleTheme()">
+        <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="icon-btn" title="Settings" onclick="openSettings()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="icon-btn" title="Logout" onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="menu-body">
+    <div class="page-title">Main Menu</div>
+    <div class="menu-grid">
+      <button class="menu-card" onclick="showScreen('dochat')">
+        <div class="menu-card-icon blue">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1a5fa8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div class="menu-card-text">
+          <h3>Document Chat</h3>
+          <p>Chat with plant manuals and documentation by discipline</p>
+        </div>
+      </button>
+      <button class="menu-card" onclick="showScreen('machines')">
+        <div class="menu-card-icon orange">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#c8440a" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </div>
+        <div class="menu-card-text">
+          <h3>Machine Debug</h3>
+          <p>Troubleshoot machines and generate maintenance reports</p>
+        </div>
+      </button>
+      <button class="menu-card" onclick="showScreen('topology')">
+        <div class="menu-card-icon green">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1a7a50" stroke-width="2"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5.5" y2="16"/><line x1="12" y1="8" x2="18.5" y2="16"/><line x1="7" y1="19" x2="17" y2="19"/></svg>
+        </div>
+        <div class="menu-card-text">
+          <h3>Plant Topology</h3>
+          <p>View machines and their connections in the plant</p>
+        </div>
+      </button>
+      <!-- Dashboard: solo admin -->
+      <button class="menu-card admin-only" id="menu-dashboard-btn" onclick="showScreen('dashboard')" style="display:none;border-color:rgba(94,61,179,0.3)">
+        <div class="menu-card-icon purple">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5e3db3" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        <div class="menu-card-text">
+          <h3>OT Dashboard <span style="font-size:10px;background:var(--purple-bg);color:var(--purple);padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px">ADMIN</span></h3>
+          <p>Work orders dashboard — tickets automáticos, tiempos inicio/cierre, KPIs de mantenimiento</p>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ DOCUMENT CHAT ══════════════ -->
+<div class="screen" id="screen-dochat">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="showScreen('menu')">‹</button>
+      <div class="topbar-logo"><span class="logo-mark">BARB</span></div>
+      <span class="topbar-title">Document Chat</span>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="toggleTheme()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="icon-btn" onclick="openSettings()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="icon-btn" onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="two-panel">
+    <!-- LEFT PANEL: filters -->
+    <div class="panel-left">
+      <div class="panel-section">
+        <span class="panel-label">Plant / Location</span>
+        <select class="form-select" id="plant-select" onchange="updateContextBar()">
+          <option value="plant1">Main Production Plant</option>
+          <option value="plant2">Assembly Line 2</option>
+          <option value="plant3">Warehouse Facility</option>
+        </select>
+      </div>
+      <div class="panel-section">
+        <span class="panel-label">Discipline</span>
+        <div class="disc-list">
+          <button class="disc-pill" data-d="electrical" onclick="selectDisc(this)"><span class="disc-dot"></span>⚡ Electrical</button>
+          <button class="disc-pill" data-d="mechanical" onclick="selectDisc(this)"><span class="disc-dot"></span>⚙️ Mechanical</button>
+          <button class="disc-pill" data-d="hydraulic"  onclick="selectDisc(this)"><span class="disc-dot"></span>💧 Hydraulic</button>
+          <button class="disc-pill" data-d="pneumatic"  onclick="selectDisc(this)"><span class="disc-dot"></span>💨 Pneumatic</button>
+          <button class="disc-pill" data-d="automation" onclick="selectDisc(this)"><span class="disc-dot"></span>🤖 Automation</button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <span class="panel-label">Machine (Optional)</span>
+        <div class="machine-sel-list">
+          <button class="machine-sel-item active" data-mid="all" onclick="selectDocMachine(this)">
+            <span class="msi-dot ok"></span>
+            <div><div class="msi-name">All Machines</div></div>
+          </button>
+          <button class="machine-sel-item" data-mid="comp-a1" onclick="selectDocMachine(this)">
+            <span class="msi-dot ok"></span>
+            <div><div class="msi-name">Compressor Unit A1</div><div class="msi-model">Atlas Copco GA75</div></div>
+          </button>
+          <button class="machine-sel-item" data-mid="press-b3" onclick="selectDocMachine(this)">
+            <span class="msi-dot warn"></span>
+            <div><div class="msi-name">Hydraulic Press B3</div><div class="msi-model">Schuler P4000</div></div>
+          </button>
+          <button class="machine-sel-item" data-mid="cnc-c2" onclick="selectDocMachine(this)">
+            <span class="msi-dot ok"></span>
+            <div><div class="msi-name">CNC Mill C2</div><div class="msi-model">Haas VF-4</div></div>
+          </button>
+          <button class="machine-sel-item" data-mid="motor-d1" onclick="selectDocMachine(this)">
+            <span class="msi-dot maintain"></span>
+            <div><div class="msi-name">Motor Drive D1</div><div class="msi-model">ABB ACS880</div></div>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- RIGHT PANEL: chat -->
+    <div class="panel-right">
+      <div class="context-tags" id="ctx-bar">
+        <span class="ctx-empty">Select a discipline to start chatting with documentation</span>
+      </div>
+      <div id="doc-chat-area" class="chat-messages">
+        <div class="chat-empty" id="doc-empty">
+          <div class="chat-empty-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>Select a discipline to start</h3>
+          <p>Choose a discipline from the left panel, then ask about procedures, specifications, maintenance schedules or troubleshooting guides.</p>
+        </div>
+      </div>
+      <div class="input-zone">
+        <div class="input-tags" id="doc-input-tags"></div>
+        <div class="input-wrap">
+          <textarea id="doc-input" rows="1" placeholder="Ask about procedures, specifications, maintenance..." disabled></textarea>
+          <button class="send-btn" id="doc-send" onclick="sendDocMessage()" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <div class="input-hint">Enter to send · Shift+Enter new line · Powered by RAG + LM Studio</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MACHINES ══════════════ -->
+<div class="screen" id="screen-machines">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="showScreen('menu')">‹</button>
+      <div class="topbar-logo"><span class="logo-mark">BARB</span></div>
+      <span class="topbar-title">Machine Debug</span>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="toggleTheme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      <button class="icon-btn" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </div>
+  <div class="machines-body">
+    <div class="page-title">Select Machine to Debug</div>
+    <div class="machine-grid">
+      <button class="machine-card" onclick="selectMachine('comp-a1')">
+        <div class="mc-top"><div class="mc-icon">💨</div><span class="mc-status operational">Operational</span></div>
+        <div class="mc-name">Compressor Unit A1</div>
+        <div class="mc-model">Atlas Copco GA75</div>
+        <div class="mc-category">Pneumatic</div>
+      </button>
+      <button class="machine-card" onclick="selectMachine('press-b3')">
+        <div class="mc-top"><div class="mc-icon">💧</div><span class="mc-status warning">Warning</span></div>
+        <div class="mc-name">Hydraulic Press B3</div>
+        <div class="mc-model">Schuler P4000</div>
+        <div class="mc-category">Hydraulic</div>
+      </button>
+      <button class="machine-card" onclick="selectMachine('cnc-c2')">
+        <div class="mc-top"><div class="mc-icon">⚙️</div><span class="mc-status operational">Operational</span></div>
+        <div class="mc-name">CNC Mill C2</div>
+        <div class="mc-model">Haas VF-4</div>
+        <div class="mc-category">Mechanical</div>
+      </button>
+      <button class="machine-card" onclick="selectMachine('motor-d1')">
+        <div class="mc-top"><div class="mc-icon">⚡</div><span class="mc-status maintenance">Maintenance</span></div>
+        <div class="mc-name">Motor Drive D1</div>
+        <div class="mc-model">ABB ACS880</div>
+        <div class="mc-category">Electrical</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ DEBUG ══════════════ -->
+<div class="screen" id="screen-debug">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="showScreen('machines')">‹</button>
+      <div class="topbar-logo"><span class="logo-mark">BARB</span></div>
+      <span class="topbar-title" id="debug-topbar-title">Machine Debug</span>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="toggleTheme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      <button class="icon-btn" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </div>
+  <div class="two-panel">
+    <!-- Machine info left -->
+    <div class="debug-panel-left">
+      <h3 style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px;">Machine Information</h3>
+      <div class="debug-machine-img">
+        <div class="big-icon" id="debug-icon">⚙️</div>
+        <div class="dm-name" id="debug-name">—</div>
+        <div class="dm-model" id="debug-model">—</div>
+      </div>
+      <div class="debug-specs">
+        <h4>Specifications</h4>
+        <div class="spec-row"><span class="spec-label">Status</span><span class="spec-val" id="spec-status">—</span></div>
+        <div class="spec-row"><span class="spec-label">Category</span><span class="spec-val" id="spec-cat">—</span></div>
+        <div class="spec-row"><span class="spec-label">Last Maintenance</span><span class="spec-val" id="spec-last">2 days ago</span></div>
+        <div class="spec-row"><span class="spec-label">Next Maintenance</span><span class="spec-val" id="spec-next">In 28 days</span></div>
+        <div class="spec-row"><span class="spec-label">Session ID</span><span class="spec-val" id="spec-session">—</span></div>
+        <div class="spec-row"><span class="spec-label">Session Start</span><span class="spec-val" id="spec-start">—</span></div>
+      </div>
+    </div>
+    <!-- Debug chat right -->
+    <div class="debug-panel-right">
+      <div class="debug-chat" id="debug-chat-area">
+        <div class="chat-empty" id="debug-empty">
+          <div class="chat-empty-icon">
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <h3>Start debugging session</h3>
+          <p>Describe the issue or ask questions about the machine. You can also attach photos.</p>
+        </div>
+      </div>
+      <div class="debug-input-zone">
+        <div class="debug-input-row">
+          <div class="input-wrap" style="flex:1">
+            <textarea id="debug-input" rows="1" placeholder="Describe the issue or ask questions..."></textarea>
+            <button class="send-btn" onclick="sendDebugMessage()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+          <button class="camera-btn" title="Attach photo" onclick="showToast('📷 Camera: attach feature — POST /api/debug/attachments')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+        <button class="report-btn" onclick="goToReport()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Generate &amp; Send Report
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TOPOLOGY ══════════════ -->
+<div class="screen" id="screen-topology">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="showScreen('menu')">‹</button>
+      <div class="topbar-logo"><span class="logo-mark">BARB</span></div>
+      <span class="topbar-title">Plant Topology</span>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="toggleTheme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      <button class="icon-btn" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </div>
+  <div class="topology-body">
+    <div class="topology-toolbar">
+      <div class="topo-title">Plant Topology</div>
+      <div class="topo-btns">
+        <button class="btn btn-outline btn-sm" onclick="zoomTopo(1.2)">＋ Zoom In</button>
+        <button class="btn btn-outline btn-sm" onclick="zoomTopo(0.8)">－ Zoom Out</button>
+        <button class="btn btn-outline btn-sm" onclick="resetTopo()">Reset View</button>
+      </div>
+    </div>
+    <div class="topo-canvas" id="topo-canvas">
+      <svg id="topo-svg" viewBox="0 0 900 480" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+        <!-- Connection lines -->
+        <g id="topo-lines" stroke="var(--border2)" stroke-width="2" fill="none">
+          <line x1="200" y1="160" x2="400" y2="120" stroke-dasharray="6,3" opacity=".7"/>
+          <line x1="400" y1="120" x2="620" y2="150" opacity=".7"/>
+          <line x1="400" y1="120" x2="390" y2="320" opacity=".7"/>
+          <line x1="200" y1="160" x2="390" y2="320" stroke-dasharray="6,3" opacity=".5"/>
+          <line x1="620" y1="150" x2="680" y2="330" opacity=".5"/>
+        </g>
+        <!-- Node: Motor Drive -->
+        <g transform="translate(140,100)" style="cursor:pointer" onclick="topoClick('Motor Drive D1','Electrical','maintenance')">
+          <rect x="0" y="0" width="120" height="80" rx="12" fill="var(--surface)" stroke="#a06a00" stroke-width="2"/>
+          <text x="60" y="28" text-anchor="middle" font-size="22">⚡</text>
+          <text x="60" y="50" text-anchor="middle" font-size="11" fill="var(--ink)" font-weight="600">Motor Drive D1</text>
+          <text x="60" y="65" text-anchor="middle" font-size="10" fill="var(--ink3)">Electrical</text>
+          <circle cx="106" cy="14" r="7" fill="#3ecf8e"/>
+        </g>
+        <!-- Node: CNC Mill -->
+        <g transform="translate(338,58)" style="cursor:pointer" onclick="topoClick('CNC Mill C2','Mechanical','operational')">
+          <rect x="0" y="0" width="120" height="80" rx="12" fill="var(--surface)" stroke="#1a5fa8" stroke-width="2"/>
+          <text x="60" y="28" text-anchor="middle" font-size="22">⚙️</text>
+          <text x="60" y="50" text-anchor="middle" font-size="11" fill="var(--ink)" font-weight="600">CNC Mill C2</text>
+          <text x="60" y="65" text-anchor="middle" font-size="10" fill="var(--ink3)">Mechanical</text>
+          <circle cx="106" cy="14" r="7" fill="#3ecf8e"/>
+        </g>
+        <!-- Node: Compressor -->
+        <g transform="translate(558,90)" style="cursor:pointer" onclick="topoClick('Compressor A1','Pneumatic','operational')">
+          <rect x="0" y="0" width="124" height="80" rx="12" fill="var(--surface)" stroke="#5e3db3" stroke-width="2"/>
+          <text x="62" y="28" text-anchor="middle" font-size="22">💨</text>
+          <text x="62" y="50" text-anchor="middle" font-size="11" fill="var(--ink)" font-weight="600">Compressor A1</text>
+          <text x="62" y="65" text-anchor="middle" font-size="10" fill="var(--ink3)">Pneumatic</text>
+          <circle cx="110" cy="14" r="7" fill="#3ecf8e"/>
+        </g>
+        <!-- Node: PLC -->
+        <g transform="translate(320,265)" style="cursor:pointer" onclick="topoClick('PLC Controller','Automation','operational')">
+          <rect x="0" y="0" width="120" height="80" rx="12" fill="var(--surface)" stroke="#1a7a50" stroke-width="2.5"/>
+          <text x="60" y="28" text-anchor="middle" font-size="22">🤖</text>
+          <text x="60" y="50" text-anchor="middle" font-size="11" fill="var(--ink)" font-weight="600">PLC Controller</text>
+          <text x="60" y="65" text-anchor="middle" font-size="10" fill="var(--ink3)">Automation</text>
+          <circle cx="106" cy="14" r="7" fill="#3ecf8e"/>
+        </g>
+        <!-- Node: Hydraulic Press -->
+        <g transform="translate(618,270)" style="cursor:pointer" onclick="topoClick('Hydraulic Press B3','Hydraulic','warning')">
+          <rect x="0" y="0" width="132" height="80" rx="12" fill="var(--surface)" stroke="#0e7490" stroke-width="2"/>
+          <text x="66" y="28" text-anchor="middle" font-size="22">💧</text>
+          <text x="66" y="50" text-anchor="middle" font-size="11" fill="var(--ink)" font-weight="600">Hydraulic Press B3</text>
+          <text x="66" y="65" text-anchor="middle" font-size="10" fill="var(--ink3)">Hydraulic</text>
+          <circle cx="118" cy="14" r="7" fill="#a06a00"/>
+        </g>
+        <!-- Legend -->
+        <g transform="translate(20,390)">
+          <rect x="0" y="0" width="260" height="72" rx="8" fill="var(--surface2)" stroke="var(--border)" stroke-width="1"/>
+          <text x="12" y="18" font-size="10" fill="var(--ink2)" font-weight="600" font-family="monospace">LEGEND</text>
+          <circle cx="22" cy="35" r="6" fill="#3ecf8e"/><text x="35" y="39" font-size="10" fill="var(--ink2)">Operational</text>
+          <circle cx="22" cy="54" r="6" fill="#a06a00"/><text x="35" y="58" font-size="10" fill="var(--ink2)">Warning</text>
+          <circle cx="110" cy="35" r="6" fill="#1a5fa8"/><text x="123" y="39" font-size="10" fill="var(--ink2)">Maintenance</text>
+          <circle cx="110" cy="54" r="6" fill="#6b7280"/><text x="123" y="58" font-size="10" fill="var(--ink2)">Offline</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ REPORT ══════════════ -->
+<div class="screen" id="screen-report">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="showScreen('debug')">‹</button>
+      <div class="topbar-logo"><span class="logo-mark">BARB</span></div>
+      <span class="topbar-title">Debug Session Report</span>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="toggleTheme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+    </div>
+  </div>
+  <div class="report-body">
+    <div class="report-card">
+      <h2>Debug Session Report</h2>
+      <div class="report-field">
+        <label>Machine</label>
+        <div class="rfield-val" id="report-machine">—</div>
+      </div>
+      <div class="report-field">
+        <label>Session Duration</label>
+        <div class="rfield-val" id="report-duration">—</div>
+      </div>
+      <div class="report-field">
+        <label>Issue Summary</label>
+        <textarea class="report-textarea" id="report-summary" rows="4" placeholder="Describe the issue and resolution..."></textarea>
+      </div>
+      <div class="report-field">
+        <label>Actions Taken</label>
+        <textarea class="report-textarea" id="report-actions" rows="3" placeholder="List actions taken..."></textarea>
+      </div>
+      <div class="report-field">
+        <label>Recommended Preventive Actions</label>
+        <textarea class="report-textarea" id="report-recommend" rows="3" placeholder="List recommended preventive actions..."></textarea>
+      </div>
+      <div class="report-field">
+        <label>Additional Notes</label>
+        <textarea class="report-textarea" id="report-notes" rows="2" placeholder="Any additional observations..."></textarea>
+      </div>
+      <div class="report-field">
+        <label>Severity</label>
+        <select class="form-select" id="report-severity" style="max-width:200px">
+          <option>Low</option>
+          <option selected>Medium</option>
+          <option>High</option>
+          <option>Critical</option>
+        </select>
+      </div>
+      <div class="report-actions">
+        <button class="btn btn-green btn-lg" onclick="sendReport()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Send to Repository
+        </button>
+        <button class="btn btn-outline" onclick="showScreen('debug')">Back to Debug</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ DASHBOARD (ADMIN) ══════════════ -->
+<div class="screen" id="screen-dashboard">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="showScreen('menu')">‹</button>
+      <div class="topbar-logo"><span class="logo-mark">BARB</span></div>
+      <span class="topbar-title">OT Dashboard</span>
+      <span style="font-size:10px;background:var(--purple-bg);color:var(--purple);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-weight:600">ADMIN</span>
+    </div>
+    <div class="topbar-right">
+      <div class="status-badge"><div class="status-dot" id="dash-api-dot"></div><span id="dash-api-txt">API</span></div>
+      <button class="icon-btn" onclick="toggleTheme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      <button class="icon-btn" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </div>
+  <div class="dashboard-body">
+
+    <!-- KPI cards -->
+    <div class="dash-kpi-grid" id="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-card-top">
+          <div class="kpi-icon" style="background:var(--blue-bg)">📋</div>
+          <svg width="40" height="24" id="spark-total"></svg>
+        </div>
+        <div class="kpi-num" id="kpi-total">—</div>
+        <div class="kpi-label">Total OTs (período)</div>
+        <div class="kpi-delta up" id="kpi-total-d">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-card-top">
+          <div class="kpi-icon" style="background:var(--amber-bg)">🔄</div>
+          <div class="ot-live-dot"></div>
+        </div>
+        <div class="kpi-num" id="kpi-open" style="color:var(--amber)">—</div>
+        <div class="kpi-label">OTs Abiertas</div>
+        <div class="kpi-delta" id="kpi-open-d">— en progreso</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-card-top">
+          <div class="kpi-icon" style="background:var(--green-bg)">✅</div>
+        </div>
+        <div class="kpi-num" id="kpi-completed" style="color:var(--green)">—</div>
+        <div class="kpi-label">Completadas</div>
+        <div class="kpi-delta up" id="kpi-comp-d">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-card-top">
+          <div class="kpi-icon" style="background:var(--accent-bg)">⏱</div>
+        </div>
+        <div class="kpi-num" id="kpi-mttr" style="color:var(--accent)">—</div>
+        <div class="kpi-label">MTTR promedio (min)</div>
+        <div class="kpi-delta" id="kpi-mttr-d">— vs objetivo 35 min</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="dash-filters">
+      <select class="filter-select" id="dash-filter-status" onchange="renderOTTable()">
+        <option value="all">Todos los estados</option>
+        <option value="in_progress">En progreso</option>
+        <option value="completed">Completadas</option>
+        <option value="closed">Cerradas</option>
+        <option value="on_hold">En espera</option>
+      </select>
+      <select class="filter-select" id="dash-filter-machine" onchange="renderOTTable()">
+        <option value="all">Todas las máquinas</option>
+        <option value="Compressor Unit A1">Compressor A1</option>
+        <option value="Hydraulic Press B3">Hydraulic Press B3</option>
+        <option value="CNC Mill C2">CNC Mill C2</option>
+        <option value="Motor Drive D1">Motor Drive D1</option>
+      </select>
+      <input class="filter-search" id="dash-search" placeholder="Buscar OT, técnico, máquina..." oninput="renderOTTable()" />
+      <button class="dash-refresh-btn" onclick="refreshDashboard()">
+        <svg id="refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Actualizar
+      </button>
+      <div style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink3)" id="dash-last-refresh">—</div>
+    </div>
+
+    <!-- OT Table -->
+    <div class="dash-section-title">
+      Órdenes de Trabajo <span id="ot-count-label">— registros</span>
+    </div>
+    <div class="ot-table-wrap">
+      <table class="ot-table">
+        <thead>
+          <tr>
+            <th>N° OT</th>
+            <th>Máquina</th>
+            <th>Tipo</th>
+            <th>Técnico</th>
+            <th>Inicio</th>
+            <th>Cierre</th>
+            <th>Duración</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="ot-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Bottom: timeline + top machines -->
+    <div class="dash-bottom">
+      <div class="timeline-card">
+        <div class="dash-section-title">Tiempo de resolución por OT <span>duración real</span></div>
+        <div class="timeline-bar-wrap" id="timeline-bars"></div>
+      </div>
+      <div class="top-machines-card">
+        <div class="dash-section-title">Top máquinas con fallas <span>período</span></div>
+        <div id="top-machines-list"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- OT Detail Modal -->
+<div class="modal-overlay" id="ot-detail-modal">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-header">
+      <div>
+        <div class="ot-detail-num" id="ot-detail-num">—</div>
+        <h2 style="font-size:17px" id="ot-detail-title">Detalle OT</h2>
+      </div>
+      <button class="modal-close" onclick="closeOTDetail()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px">
+      <!-- Status timeline -->
+      <div class="ot-timeline-strip" id="ot-status-strip"></div>
+      <div class="ot-detail-grid" id="ot-detail-grid"></div>
+      <div id="ot-detail-notes" style="margin-top:10px;font-size:13px;color:var(--ink2);line-height:1.6"></div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:10px">
+        <button class="btn btn-outline btn-sm" onclick="closeOTDetail()">Cerrar</button>
+        <button class="btn btn-sm" style="background:var(--accent);color:#fff" onclick="exportOT()">📄 Exportar PDF</button>
+        <button class="btn btn-sm btn-outline" id="ot-detail-status-btn" onclick="advanceOTStatus()">Avanzar estado →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ SETTINGS MODAL ══════════════ -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Settings</h2>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Appearance -->
+      <div class="settings-section">
+        <h3>Appearance</h3>
+        <div class="settings-block">
+          <div class="settings-row">
+            <div><div class="sr-label">Dark Theme</div></div>
+            <label class="toggle"><input type="checkbox" id="dark-toggle" onchange="toggleTheme()"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+        </div>
+      </div>
+      <!-- Language -->
+      <div class="settings-section">
+        <h3>Language</h3>
+        <select class="form-select" onchange="showToast('Language updated — PUT /api/user/preferences')">
+          <option>English</option>
+          <option selected>Español</option>
+          <option>Deutsch</option>
+          <option>Français</option>
+          <option>中文</option>
+        </select>
+      </div>
+      <!-- Account -->
+      <div class="settings-section">
+        <h3>Account</h3>
+        <div class="settings-block">
+          <div class="settings-row">
+            <div><div class="sr-label">Username</div><div class="sr-sub" id="settings-user">carlos.tech</div></div>
+          </div>
+          <div class="settings-row">
+            <div><div class="sr-label">Role</div><div class="sr-sub" id="settings-role">Technician</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Notifications -->
+      <div class="settings-section">
+        <h3>Notifications</h3>
+        <div class="settings-block">
+          <div class="settings-row">
+            <div class="sr-label">Push Notifications</div>
+            <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="sr-label">Email Reports</div>
+            <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="sr-label">Maintenance Alerts</div>
+            <label class="toggle"><input type="checkbox"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+        </div>
+      </div>
+      <!-- Data & Storage -->
+      <div class="settings-section">
+        <h3>Data &amp; Storage</h3>
+        <div class="settings-block">
+          <div class="settings-row">
+            <div><div class="sr-label">Cache Size</div><div class="sr-sub">2.4 GB used</div></div>
+            <button class="btn btn-sm" style="background:#c0281e;color:#fff;border:none" onclick="showToast('Cache cleared — POST /api/user/cache/clear')">Clear Cache</button>
+          </div>
+          <div class="settings-row">
+            <div class="sr-label">Offline Mode</div>
+            <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="sr-label">Auto Sync</div>
+            <label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label>
+          </div>
+        </div>
+      </div>
+      <!-- System -->
+      <div class="settings-section">
+        <h3>System</h3>
+        <div class="settings-block">
+          <div class="settings-row"><div class="sr-label">App Version</div><div style="font-family:var(--mono);font-size:12px;color:var(--ink2)">2.1.0</div></div>
+          <div class="settings-row">
+            <div><div class="sr-label">FastAPI Endpoint</div></div>
+            <input class="form-input" id="api-endpoint" value="http://localhost:8000" style="max-width:190px;font-family:var(--mono);font-size:10px;padding:5px 8px" />
+          </div>
+          <div class="settings-row">
+            <div><div class="sr-label">LM Studio Endpoint</div></div>
+            <input class="form-input" id="lm-endpoint" value="http://localhost:1234/v1" style="max-width:190px;font-family:var(--mono);font-size:10px;padding:5px 8px" />
+          </div>
+          <div class="settings-row">
+            <div><div class="sr-label">LM Studio Model</div></div>
+            <input class="form-input" id="lm-model-input" value="local-model" style="max-width:190px;font-family:var(--mono);font-size:10px;padding:5px 8px" />
+          </div>
+          <div class="settings-row"><div class="sr-label">Device ID</div><div style="font-family:var(--mono);font-size:12px;color:var(--ink2)">TAB-001-2026</div></div>
+          <div class="settings-row"><div class="sr-label">Last Sync</div><div style="font-size:12px;color:var(--ink2)" id="last-sync">—</div></div>
+          <div class="settings-row">
+            <div><div class="sr-label">Probar conexiones</div><div class="sr-sub" id="conn-status">—</div></div>
+            <button class="btn btn-sm btn-outline" onclick="testAllConnections()">🔌 Probar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+      <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const S = {
+  currentScreen: 'login',
+  dark: false,
+  lang: 'es',
+  discipline: null,
+  docMachine: 'all',
+  plant: 'plant1',
+  selectedMachine: null,
+  sessionId: null,
+  sessionStart: null,
+  docMessages: [],
+  debugMessages: [],
+  user: { name: 'carlos.tech', role: 'Technician' },
+  apiBase: 'http://localhost:8000',
+  lmBase: 'http://localhost:1234/v1',
+  lmModel: 'local-model',
+  isAdmin: false,
+  loading: false,
+};
+
+const MACHINES = {
+  'comp-a1':  { name:'Compressor Unit A1', model:'Atlas Copco GA75', status:'operational', cat:'Pneumatic', icon:'💨' },
+  'press-b3': { name:'Hydraulic Press B3', model:'Schuler P4000',    status:'warning',     cat:'Hydraulic', icon:'💧' },
+  'cnc-c2':   { name:'CNC Mill C2',        model:'Haas VF-4',        status:'operational', cat:'Mechanical',icon:'⚙️' },
+  'motor-d1': { name:'Motor Drive D1',     model:'ABB ACS880',       status:'maintenance', cat:'Electrical',icon:'⚡' },
+};
+
+const DISC_TAGS = {
+  electrical:'disc-el', mechanical:'disc-me', hydraulic:'disc-hy', pneumatic:'disc-pn', automation:'disc-au'
+};
+const DISC_LABEL = {
+  electrical:'⚡ Electrical', mechanical:'⚙️ Mechanical', hydraulic:'💧 Hydraulic', pneumatic:'💨 Pneumatic', automation:'🤖 Automation'
+};
+
+// Demo chunks for RAG
+const DEMO_CHUNKS = [
+  { text:"ARRANQUE SEGURO: 1) Verificar nivel aceite MIN-MAX. 2) Abrir válvula suministro. 3) Verificar guardas. 4) Presionar START. 5) Esperar 30s vacío. 6) Cargar gradualmente a 7.5 bar. ⚠️ No superar 10 bar.", page:14 },
+  { text:"CÓDIGO E-041 — Sobrecalentamiento motor. CAUSAS: Filtro obstruido, aceite bajo, ventilación bloqueada, temperatura >45°C. SOLUCIÓN: 1) Parar equipo. 2) Limpiar filtro FA-001. 3) Verificar aceite SAE 40. 4) Despejar ventilación 50cm.", page:37 },
+  { text:"LUBRICACIÓN: Aceite Roto-Inject Plus 4000H, ISO 6743-3A. 4.5 litros. Cambio: 4000h o 12 meses. Rodamientos B1/B2: grasa PTFE cada 2000h.", page:52 },
+  { text:"TORQUES: Tapa culata M10→45Nm. Brida M8→25Nm. Tuerca base M12→65Nm. Pernos válvula M6→12Nm. ⚠️ Torquímetro calibrado obligatorio.", page:61 },
+  { text:"PREVENTIVO: 500h limpiar prefiltro. 2000h cambiar filtro aceite+separador. 4000h cambio aceite, revisar válvulas, calibrar termostato. 8000h overhaul general.", page:78 },
+  { text:"CAÍDA DE PRESIÓN — B3 Schuler: 1) Válvula proporcional desgastada. 2) Filtro hidráulico colapsado (revisar indicador diferencial). 3) Nivel aceite bajo. 4) Fuga interna cilindro. Diagnóstico: medir presión en punto P1.", page:44 },
+  { text:"POST-PARADA EMERGENCIA: 1) Identificar causa en HMI. 2) Resolver causa raíz. 3) Resetear relé SR-001. 4) Restablecer presión gradualmente. 5) Ciclo vacío antes de producción.", page:19 },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function showScreen(id) {
+  if (id === 'dashboard' && !S.isAdmin) { showToast('⚠️ Acceso restringido — solo administradores'); return; }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  S.currentScreen = id;
+  if (id === 'dashboard') { loadDashboardData(); }
+}
+
+function login() {
+  const user = document.getElementById('login-user').value.trim() || 'operator';
+  const role = document.getElementById('login-role').value;
+  S.user = { name: user, role: role.charAt(0).toUpperCase()+role.slice(1) };
+  document.getElementById('settings-user').textContent = user;
+  document.getElementById('settings-role').textContent = S.user.role;
+  document.getElementById('last-sync').textContent = new Date().toLocaleTimeString('es-CL');
+  callAPI('POST', '/api/auth/login', { username: user, password: '***', role }).catch(()=>{});
+  // Show/hide admin-only features
+  const isAdmin = role === 'admin';
+  const dashBtn = document.getElementById('menu-dashboard-btn');
+  if (dashBtn) dashBtn.style.display = isAdmin ? 'flex' : 'none';
+  S.isAdmin = isAdmin;
+  showScreen('menu');
+  testAPIConnection();
+  if (isAdmin) { loadDashboardData(); }
+}
+
+function logout() {
+  callAPI('POST', '/api/auth/logout', {}).catch(()=>{});
+  showScreen('login');
+}
+
+function goToReport() {
+  const m = S.selectedMachine ? MACHINES[S.selectedMachine] : null;
+  document.getElementById('report-machine').textContent = m ? `${m.name} — ${m.model}` : '—';
+  const elapsed = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/60000) : 0;
+  document.getElementById('report-duration').textContent = elapsed > 0 ? `${elapsed} minutes` : 'Active session';
+  // Pre-fill from debug chat if any
+  const msgs = S.debugMessages.filter(m=>m.role==='user').map(m=>m.content);
+  document.getElementById('report-summary').value = msgs.join('\n') || '';
+  showScreen('report');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// THEME & SETTINGS
+// ═══════════════════════════════════════════════════════════════
+function toggleTheme() {
+  S.dark = !S.dark;
+  document.body.dataset.theme = S.dark ? 'dark' : 'light';
+  document.getElementById('dark-toggle').checked = S.dark;
+}
+
+function toggleLang() {
+  S.lang = S.lang === 'es' ? 'en' : 'es';
+  showToast(`Language: ${S.lang === 'es' ? 'Español' : 'English'}`);
+}
+
+function openSettings() {
+  document.getElementById('settings-modal').classList.add('open');
+  document.getElementById('dark-toggle').checked = S.dark;
+  const ep  = document.getElementById('api-endpoint');
+  const lmp = document.getElementById('lm-endpoint');
+  const lmm = document.getElementById('lm-model-input');
+  if (ep)  ep.value  = S.apiBase;
+  if (lmp) lmp.value = S.lmBase;
+  if (lmm) lmm.value = S.lmModel;
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+
+function saveSettings() {
+  const ep  = document.getElementById('api-endpoint');
+  const lmp = document.getElementById('lm-endpoint');
+  const lmm = document.getElementById('lm-model-input');
+  if (ep)  S.apiBase  = ep.value.trim();
+  if (lmp) S.lmBase   = lmp.value.trim();
+  if (lmm) S.lmModel  = lmm.value.trim() || 'local-model';
+  callAPI('PUT', '/api/user/preferences', { theme: S.dark?'dark':'light', language:S.lang }).catch(()=>{});
+  closeSettings();
+  showToast('✅ Configuración guardada');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DOCUMENT CHAT FILTERS
+// ═══════════════════════════════════════════════════════════════
+function selectDisc(el) {
+  const d = el.dataset.d;
+  if (S.discipline === d) {
+    S.discipline = null;
+    el.classList.remove('active');
+  } else {
+    document.querySelectorAll('.disc-pill').forEach(p=>p.classList.remove('active'));
+    S.discipline = d;
+    el.classList.add('active');
+  }
+  const input = document.getElementById('doc-input');
+  const btn   = document.getElementById('doc-send');
+  const disabled = !S.discipline;
+  input.disabled = disabled;
+  btn.disabled = disabled;
+  if (!disabled && document.getElementById('doc-empty')) {
+    document.getElementById('doc-empty').remove();
+  }
+  updateContextBar();
+  callAPI('GET', `/api/disciplines?plantId=${S.plant}`).catch(()=>{});
+}
+
+function selectDocMachine(el) {
+  document.querySelectorAll('.machine-sel-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  S.docMachine = el.dataset.mid;
+  updateContextBar();
+}
+
+function updateContextBar() {
+  const bar = document.getElementById('ctx-bar');
+  const tags = [];
+  const plant = document.getElementById('plant-select');
+  if (plant) {
+    const pname = plant.options[plant.selectedIndex]?.text;
+    tags.push(`<span class="ctx-tag plant">📍 ${pname}</span>`);
+  }
+  if (S.discipline) {
+    const cls = DISC_TAGS[S.discipline] || '';
+    tags.push(`<span class="ctx-tag ${cls}">◉ ${DISC_LABEL[S.discipline]||S.discipline}</span>`);
+  }
+  if (S.docMachine && S.docMachine !== 'all') {
+    const el = document.querySelector(`.machine-sel-item[data-mid="${S.docMachine}"] .msi-name`);
+    if (el) tags.push(`<span class="ctx-tag machine">⚙ ${el.textContent}</span>`);
+  }
+  const itags = document.getElementById('doc-input-tags');
+  if (itags) {
+    itags.innerHTML = tags.length ? tags.join('') : '';
+  }
+  bar.innerHTML = tags.length
+    ? tags.join('')
+    : '<span class="ctx-empty">Select a discipline to start chatting with documentation</span>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MACHINES & DEBUG
+// ═══════════════════════════════════════════════════════════════
+function selectMachine(id) {
+  S.selectedMachine = id;
+  S.debugMessages = [];
+  S.sessionId = 'SES-' + Date.now();
+  S.sessionStart = Date.now();
+
+  const m = MACHINES[id];
+  document.getElementById('debug-topbar-title').textContent = m?.name || 'Machine Debug';
+  document.getElementById('debug-icon').textContent   = m?.icon  || '⚙️';
+  document.getElementById('debug-name').textContent   = m?.name  || '—';
+  document.getElementById('debug-model').textContent  = m?.model || '—';
+  document.getElementById('spec-status').textContent  = m?.status || '—';
+  document.getElementById('spec-cat').textContent     = m?.cat   || '—';
+  document.getElementById('spec-session').textContent = S.sessionId;
+  document.getElementById('spec-start').textContent   = new Date().toLocaleTimeString('es-CL');
+
+  // Reset chat
+  const area = document.getElementById('debug-chat-area');
+  area.innerHTML = `<div class="chat-empty" id="debug-empty">
+    <div class="chat-empty-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+    <h3>Start debugging session</h3>
+    <p>Describe the issue or ask questions about <strong>${m?.name||'this machine'}</strong>.</p>
+  </div>`;
+
+  // Call API: start session
+  callAPI('POST', '/api/debug/sessions', {
+    machineId: id, issueDescription: '', priority: 'medium'
+  }).catch(()=>{});
+
+  // Auto-create OT ticket
+  createAutoTicket(id, S.user.name, '');
+  renderDashboardLive();
+  showScreen('debug');
+}
+
+function topoClick(name, cat, status) {
+  const id = Object.keys(MACHINES).find(k=>MACHINES[k].name===name||MACHINES[k].cat===cat) || 'comp-a1';
+  showToast(`${name} — ${status} · GET /api/machines/${id}/connections`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RAG VECTOR SEARCH
+// ═══════════════════════════════════════════════════════════════
+function tokenize(t) {
+  return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/\W+/).filter(x=>x.length>2);
+}
+function retrieveContext(query, k=4) {
+  const qTok = new Set(tokenize(query));
+  return DEMO_CHUNKS
+    .map(c => {
+      const cTok = tokenize(c.text);
+      let score = 0;
+      qTok.forEach(q => { const f=cTok.filter(t=>t.includes(q)||q.includes(t)).length; if(f>0) score+=1+Math.log(f); });
+      return {...c, score};
+    })
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,k).filter(c=>c.score>0);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DOCUMENT CHAT
+// ═══════════════════════════════════════════════════════════════
+async function sendDocMessage() {
+  const input = document.getElementById('doc-input');
+  const query = input.value.trim();
+  if (!query || S.loading || !S.discipline) return;
+  S.loading = true;
+  input.value = ''; input.style.height='auto';
+  document.getElementById('doc-send').disabled = true;
+
+  // Remove empty state
+  const empty = document.getElementById('doc-empty');
+  if (empty) empty.remove();
+
+  const area = document.getElementById('doc-chat-area');
+  addMsgDOM(area, 'user', query);
+  S.docMessages.push({role:'user',content:query});
+
+  const tid = addThinkingDOM(area);
+  const t0 = Date.now();
+
+  try {
+    // Try backend /api/chat/documents first
+    const plant = document.getElementById('plant-select');
+    const plantId = plant?.value || 'plant1';
+    const apiResp = await callAPI('POST', '/api/chat/documents', {
+      disciplineId: S.discipline, plantId,
+      machineId: S.docMachine !== 'all' ? S.docMachine : null,
+      message: query,
+      conversationId: S.docConvId || null,
+      context: { previousMessages: S.docMessages.slice(-4).map(m=>m.content) }
+    });
+    if (apiResp && apiResp.response) {
+      document.getElementById(tid)?.remove();
+      const sources = apiResp.sources || [];
+      addBotMsgDOM(area, apiResp.response, sources, apiResp.suggestedQuestions||[], ((Date.now()-t0)/1000).toFixed(1), true);
+      S.docConvId = apiResp.conversationId;
+      S.docMessages.push({role:'assistant',content:apiResp.response});
+      S.loading = false;
+      document.getElementById('doc-send').disabled = false;
+      return;
+    }
+  } catch(_) {}
+
+  // Fallback: LM Studio / demo
+  try {
+    const chunks = retrieveContext(query);
+    const ctx = chunks.length
+      ? chunks.map((c,i)=>`[FRAGMENTO ${i+1} — p.${c.page}]\n${c.text}`).join('\n\n')
+      : '[Sin manual cargado — responde con conocimiento general]';
+
+    const m = S.docMachine!=='all' ? MACHINES[S.docMachine] : null;
+    const system = `Eres BARB, asistente experto en mantenimiento industrial. Disciplina: ${DISC_LABEL[S.discipline]||S.discipline}. ${m?'Equipo: '+m.name+'.':''}
+Responde en español, paso a paso, citando página del manual cuando disponible. Usa ⚠️ para advertencias.\n\nCONTEXTO MANUAL:\n${ctx}`;
+
+    const resp = await callLMStudio([
+      {role:'system',content:system},
+      ...S.docMessages.slice(-4).map(m=>({role:m.role,content:m.content})),
+      {role:'user',content:query}
+    ], 1500);
+    if (!resp.ok && resp.status !== 200) throw new Error('LM Studio error');
+    const data = await resp.json();
+    document.getElementById(tid)?.remove();
+    const answer = (data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content) || data.content || JSON.stringify(data);
+    addBotMsgDOM(area, answer, chunks.map(c=>({documentName:'Manual',pageNumber:c.page,excerpt:c.text.slice(0,80)+'…'})), [], ((Date.now()-t0)/1000).toFixed(1), false);
+    S.docMessages.push({role:'assistant',content:answer});
+  } catch(_) {
+    // Demo fallback
+    document.getElementById(tid)?.remove();
+    const chunks = retrieveContext(query);
+    const demoAns = chunks.length
+      ? `**[DEMO]** Basado en el manual:\n\n${chunks[0].text}\n\n*Inicia LM Studio o el backend FastAPI para respuestas inteligentes.*`
+      : `**[DEMO]** No encontré información específica. Inicia LM Studio en ${S.lmBase} o la API en ${S.apiBase}.`;
+    addBotMsgDOM(area, demoAns, [], ['¿Procedimiento de arranque?','¿Puntos de lubricación?','¿Código de error E-041?'], ((Date.now()-t0)/1000).toFixed(1), false);
+    S.docMessages.push({role:'assistant',content:demoAns});
+  }
+
+  S.loading = false;
+  document.getElementById('doc-send').disabled = false;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEBUG CHAT
+// ═══════════════════════════════════════════════════════════════
+async function sendDebugMessage() {
+  const input = document.getElementById('debug-input');
+  const query = input.value.trim();
+  if (!query || S.loading) return;
+  S.loading = true;
+  input.value = ''; input.style.height='auto';
+
+  const empty = document.getElementById('debug-empty');
+  if (empty) empty.remove();
+
+  const area = document.getElementById('debug-chat-area');
+  addMsgDOM(area, 'user', query);
+  S.debugMessages.push({role:'user',content:query});
+
+  const tid = addThinkingDOM(area);
+  const t0 = Date.now();
+  const m = S.selectedMachine ? MACHINES[S.selectedMachine] : null;
+
+  try {
+    const apiResp = await callAPI('POST', '/api/chat/debug', {
+      sessionId: S.sessionId, machineId: S.selectedMachine,
+      message: query, attachments: [], sensorData: null
+    });
+    if (apiResp && apiResp.response) {
+      document.getElementById(tid)?.remove();
+      addDebugResponseDOM(area, apiResp.response, apiResp.diagnostics, apiResp.suggestedActions, ((Date.now()-t0)/1000).toFixed(1), true);
+      S.debugMessages.push({role:'assistant',content:apiResp.response});
+      S.loading = false;
+      return;
+    }
+  } catch(_) {}
+
+  try {
+    const chunks = retrieveContext(query);
+    const ctx = chunks.length
+      ? chunks.map((c,i)=>`[FRAGMENTO ${i+1} — p.${c.page}]\n${c.text}`).join('\n\n')
+      : '[Sin manual disponible]';
+    const system = `Eres BARB, experto en diagnóstico de maquinaria industrial. Máquina: ${m?.name||'desconocida'} (${m?.model||''}).
+Responde en español con: diagnóstico preciso, causas posibles, acciones paso a paso. Usa ⚠️ para advertencias de seguridad.\n\nCONTEXTO:\n${ctx}`;
+
+    const resp = await callLMStudio([
+      {role:'system',content:system},
+      ...S.debugMessages.slice(-4).map(m=>({role:m.role,content:m.content})),
+      {role:'user',content:query}
+    ], 1500);
+    if (!resp) throw new Error('no response');
+    const data = await resp.json();
+    document.getElementById(tid)?.remove();
+    const answer = (data.choices&&data.choices[0]?.message?.content) || data.content || JSON.stringify(data);
+    addDebugResponseDOM(area, answer, null, null, ((Date.now()-t0)/1000).toFixed(1), false);
+    S.debugMessages.push({role:'assistant',content:answer});
+  } catch(_) {
+    document.getElementById(tid)?.remove();
+    const chunks = retrieveContext(query);
+    const demoAns = chunks.length
+      ? `**[DEMO — Machine Debug]**\n\n${chunks[0].text}`
+      : `**[DEMO]** Inicia LM Studio o el backend FastAPI.`;
+    const demoDiag = { possibleCauses:['Filtro obstruido','Nivel aceite bajo','Sobrecalentamiento'], severity:'medium', urgency:'moderate' };
+    const demoActs = [
+      {action:'Parar equipo de inmediato',priority:1,estimatedTime:'2 min',requiredParts:[]},
+      {action:'Verificar filtros y nivel de aceite',priority:2,estimatedTime:'15 min',requiredParts:['Filtro FA-001']},
+    ];
+    addDebugResponseDOM(area, demoAns, demoDiag, demoActs, ((Date.now()-t0)/1000+0.5).toFixed(1), false);
+    S.debugMessages.push({role:'assistant',content:demoAns});
+  }
+
+  S.loading = false;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DOM HELPERS
+// ═══════════════════════════════════════════════════════════════
+function now() {
+  return new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+}
+
+function addMsgDOM(area, role, content) {
+  const id = 'msg-'+Date.now();
+  const rendered = content
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/⚠️(.*?)(<br>|$)/g,'<span style="color:var(--accent)">⚠️$1</span>$2')
+    .replace(/\n/g,'<br>');
+  area.insertAdjacentHTML('beforeend', `
+    <div class="msg ${role}" id="${id}">
+      <div class="msg-avatar ${role}">${role==='user'?'OP':'B'}</div>
+      <div>
+        <div class="msg-bubble"><p>${rendered}</p></div>
+        <div class="msg-time">${now()}</div>
+      </div>
+    </div>`);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addBotMsgDOM(area, content, sources, suggested, elapsed, fromAPI) {
+  const id = 'msg-'+Date.now();
+  const rendered = content
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/⚠️(.*?)(<br>|$)/g,'<span style="color:var(--accent)">⚠️$1</span>$2')
+    .replace(/\n/g,'<br>');
+
+  const srcHTML = sources.length ? `
+    <div class="msg-sources">
+      📎
+      ${sources.map(s=>`<span class="src-chip">📄 ${s.documentName||'Manual'} p.${s.pageNumber||'?'}</span>`).join('')}
+      <span style="font-family:var(--mono);font-size:10px;color:var(--ink3);margin-left:6px">⏱${elapsed}s${fromAPI?' · via API':''}</span>
+    </div>` : `<div style="font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:8px">⏱ ${elapsed}s${fromAPI?' · via API':''}</div>`;
+
+  const sqHTML = suggested.length ? `
+    <div class="suggested-q">
+      ${suggested.map(q=>`<button class="sq-btn" onclick="quickAsk('${q.replace(/'/g,"\\'")}')">💬 ${q}</button>`).join('')}
+    </div>` : '';
+
+  area.insertAdjacentHTML('beforeend', `
+    <div class="msg bot" id="${id}">
+      <div class="msg-avatar bot">B</div>
+      <div>
+        <div class="msg-bubble">
+          <div class="debug-mode-tag">DOCUMENT CHAT</div>
+          <p>${rendered}</p>
+          ${srcHTML}${sqHTML}
+        </div>
+        <div class="msg-time">${now()}</div>
+      </div>
+    </div>`);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addDebugResponseDOM(area, content, diagnostics, actions, elapsed, fromAPI) {
+  const id = 'msg-'+Date.now();
+  const rendered = content
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/⚠️(.*?)(<br>|$)/g,'<span style="color:var(--accent)">⚠️$1</span>$2')
+    .replace(/\n/g,'<br>');
+
+  const diagHTML = diagnostics?.possibleCauses?.length ? `
+    <div class="diagnostic-block">
+      <div class="diag-title">POSIBLES CAUSAS <span class="severity-badge ${diagnostics.severity||'medium'}" style="margin-left:8px">${diagnostics.severity||'medium'}</span></div>
+      ${diagnostics.possibleCauses.map(c=>`<div class="diag-item">${c}</div>`).join('')}
+    </div>` : '';
+
+  const actHTML = actions?.length ? `
+    <div class="action-block">
+      <div class="action-title">ACCIONES RECOMENDADAS</div>
+      ${actions.map((a,i)=>`
+        <div class="action-item">
+          <div class="action-num">${i+1}</div>
+          <div class="action-text"><strong>${a.action}</strong> · ⏱ ${a.estimatedTime||'—'}${a.requiredParts?.length?' · 🔧 '+a.requiredParts.join(', '):''}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  area.insertAdjacentHTML('beforeend', `
+    <div class="msg bot" id="${id}">
+      <div class="msg-avatar bot">B</div>
+      <div>
+        <div class="msg-bubble">
+          <div class="debug-mode-tag">MACHINE DEBUG</div>
+          <p>${rendered}</p>
+          ${diagHTML}${actHTML}
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:8px">⏱ ${elapsed}s${fromAPI?' · via API':''}</div>
+        </div>
+        <div class="msg-time">${now()}</div>
+      </div>
+    </div>`);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addThinkingDOM(area) {
+  const id = 'think-'+Date.now();
+  area.insertAdjacentHTML('beforeend', `
+    <div class="msg bot" id="${id}">
+      <div class="msg-avatar bot">B</div>
+      <div class="msg-bubble"><div class="thinking"><span></span><span></span><span></span></div></div>
+    </div>`);
+  area.scrollTop = area.scrollHeight;
+  return id;
+}
+
+function quickAsk(q) {
+  const input = document.getElementById('doc-input');
+  if (!input) return;
+  input.value = q;
+  sendDocMessage();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REPORT
+// ═══════════════════════════════════════════════════════════════
+async function sendReport() {
+  const m = S.selectedMachine ? MACHINES[S.selectedMachine] : null;
+  const payload = {
+    sessionId: S.sessionId,
+    machineId: S.selectedMachine,
+    summary: document.getElementById('report-summary').value,
+    issueDescription: document.getElementById('report-summary').value,
+    resolution: document.getElementById('report-actions').value,
+    actionsTaken: document.getElementById('report-actions').value.split('\n').filter(Boolean),
+    partsReplaced: [],
+    additionalNotes: document.getElementById('report-notes').value,
+    severity: document.getElementById('report-severity').value.toLowerCase(),
+    downtime: S.sessionStart ? Math.round((Date.now()-S.sessionStart)/60000) : 0,
+    technicianId: S.user.name,
+  };
+  // Close the auto-ticket
+  closeTicketForSession(S.sessionId, payload.summary, payload.actionsTaken);
+  try {
+    const rep = await callAPI('POST', '/api/reports/debug', payload);
+    if (rep?.reportId) {
+      await callAPI('POST', '/api/reports/upload', { reportId: rep.reportId, repository:'central', notifyManagers:true });
+      showToast('✅ Reporte enviado · '+rep.reportNumber);
+    } else {
+      showToast('✅ Reporte guardado (demo)');
+    }
+  } catch(_) {
+    showToast('✅ OT cerrada y guardada localmente');
+  }
+  setTimeout(()=>showScreen('menu'), 1500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOPOLOGY
+// ═══════════════════════════════════════════════════════════════
+let topoScale = 1;
+function zoomTopo(factor) {
+  topoScale *= factor;
+  const svg = document.getElementById('topo-svg');
+  const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+  const cx = vb[0]+vb[2]/2, cy = vb[1]+vb[3]/2;
+  const nw = vb[2]/factor, nh = vb[3]/factor;
+  svg.setAttribute('viewBox', `${cx-nw/2} ${cy-nh/2} ${nw} ${nh}`);
+}
+function resetTopo() {
+  document.getElementById('topo-svg').setAttribute('viewBox', '0 0 900 480');
+  topoScale = 1;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// API CALLS
+// ═══════════════════════════════════════════════════════════════
+async function callAPI(method, path, body) {
+  const base = S.apiBase;
+  const opts = {
+    method,
+    headers: { 'Content-Type':'application/json', 'Authorization': `Bearer demo-token` },
+    signal: AbortSignal.timeout(8000),
+  };
+  if (body && method !== 'GET') opts.body = JSON.stringify(body);
+  const r = await fetch(base+path, opts);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+async function testAPIConnection() {
+  try {
+    const data = await callAPI('GET', '/api/health', null);
+    ['api-dot','dash-api-dot'].forEach(id=>{const e=document.getElementById(id);if(e)e.className='status-dot online';});
+    ['api-status-txt','dash-api-txt'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=data.status||'API';});
+    showToast('✅ FastAPI conectada');
+  } catch(_) {
+    ['api-dot','dash-api-dot'].forEach(id=>{const e=document.getElementById(id);if(e)e.className='status-dot';});
+    ['api-status-txt','dash-api-txt'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='API offline';});
+  }
+}
+
+async function testAllConnections() {
+  const status = document.getElementById('conn-status');
+  if (status) status.textContent = 'Probando…';
+  const ep  = document.getElementById('api-endpoint');
+  const lmp = document.getElementById('lm-endpoint');
+  if (ep)  S.apiBase  = ep.value.trim();
+  if (lmp) S.lmBase   = lmp.value.trim();
+
+  let apiOk=false, lmOk=false;
+  try {
+    const r = await fetch(S.apiBase+'/api/health', {signal:AbortSignal.timeout(4000)});
+    apiOk = r.ok;
+  } catch(_) {}
+  try {
+    const r = await fetch(S.lmBase+'/models', {signal:AbortSignal.timeout(5000)});
+    if (r.ok) {
+      const d = await r.json();
+      S.lmModel = d.data?.[0]?.id || S.lmModel;
+      const lmm = document.getElementById('lm-model-input');
+      if (lmm) lmm.value = S.lmModel;
+      lmOk = true;
+    }
+  } catch(_) {}
+  const msg = [];
+  if (apiOk) msg.push('✅ FastAPI'); else msg.push('❌ FastAPI');
+  if (lmOk)  msg.push('✅ LM Studio ('+S.lmModel+')'); else msg.push('❌ LM Studio');
+  if (status) status.textContent = msg.join(' · ');
+  showToast(msg.join(' · '));
+}
+
+async function callLMStudio(messages, maxTokens=1500) {
+  // LM Studio typically runs on localhost:1234 and has CORS enabled by default
+  // When opened as file:// we need to handle CORS. Use no-cors as fallback.
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 90000);
+  try {
+    const r = await fetch(S.lmBase+'/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: S.lmModel || 'local-model',
+        messages,
+        temperature: 0.1,
+        max_tokens: maxTokens,
+        stream: false,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    return r;
+  } catch(err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') throw new Error('LM Studio timeout — modelo cargado?');
+    throw err;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+function showToast(msg, ms=3500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), ms);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WORK ORDERS STORE (tickets automáticos)
+// ═══════════════════════════════════════════════════════════════
+const WO = {
+  tickets: [],    // all work orders
+  nextNum: 1,
+  selectedId: null,
+};
+
+const WO_STATUSES = ['created','assigned','in_progress','on_hold','completed','closed'];
+const WO_STATUS_LABEL = {
+  created:'Creada', assigned:'Asignada', in_progress:'En progreso',
+  on_hold:'En espera', completed:'Completada', closed:'Cerrada'
+};
+
+// Auto-generate ticket when debug session starts
+function createAutoTicket(machineId, techName, issueDesc) {
+  const m = MACHINES[machineId] || {};
+  const now = new Date();
+  const ticket = {
+    id: 'WO-' + String(WO.nextNum++).padStart(4,'0'),
+    machineId,
+    machineName: m.name || machineId,
+    machineModel: m.model || '',
+    category: m.cat || '',
+    technician: techName || S.user.name,
+    issueDesc: issueDesc || 'Diagnóstico iniciado desde Machine Debug',
+    status: 'in_progress',
+    priority: m.status === 'warning' ? 'high' : 'medium',
+    createdAt:   now,
+    startedAt:   now,
+    completedAt: null,
+    closedAt:    null,
+    sessionId:   S.sessionId,
+    notes: '',
+    actions: [],
+    duration: null,
+  };
+  WO.tickets.unshift(ticket);
+  // POST to API (best effort)
+  callAPI('POST', '/v1/work-orders', {
+    asset_id: machineId,
+    title: `Debug: ${m.name} — ${ticket.issueDesc}`,
+    description: ticket.issueDesc,
+    priority: ticket.priority,
+    assigned_to: techName,
+    type: 'corrective',
+  }).then(r => {
+    if (r?.data?.id) ticket.apiId = r.data.id;
+  }).catch(()=>{});
+  renderDashboardLive();
+  return ticket;
+}
+
+// Close ticket when report is sent
+function closeTicketForSession(sessionId, summary, actions) {
+  const t = WO.tickets.find(t=>t.sessionId===sessionId);
+  if (!t) return;
+  const now = new Date();
+  t.status = 'completed';
+  t.completedAt = now;
+  t.notes = summary;
+  t.actions = actions;
+  t.duration = Math.round((now - t.startedAt)/60000);
+  // PATCH status
+  if (t.apiId) {
+    callAPI('PATCH', `/v1/work-orders/${t.apiId}/status`, {
+      status:'completed', completed_at: now.toISOString(),
+      notes: summary
+    }).catch(()=>{});
+  }
+  renderDashboardLive();
+}
+
+// ── DEMO DATA: pre-seed some tickets ──────────────────────────
+function seedDemoTickets() {
+  if (WO.tickets.length > 0) return;
+  const demoData = [
+    { machineId:'press-b3', tech:'Carlos R.', issue:'Caída de presión hidráulica 15%', status:'completed',
+      start: new Date(Date.now()-3*3600000), end: new Date(Date.now()-3*3600000+35*60000), notes:'Filtro hidráulico colapsado reemplazado.' },
+    { machineId:'comp-a1', tech:'Luis M.', issue:'Código E-041 sobrecalentamiento', status:'closed',
+      start: new Date(Date.now()-2*24*3600000), end: new Date(Date.now()-2*24*3600000+50*60000), notes:'Filtro FA-001 limpiado, nivel aceite corregido.' },
+    { machineId:'motor-d1', tech:'Ana P.', issue:'Vibración anormal rodamiento trasero', status:'in_progress',
+      start: new Date(Date.now()-1.5*3600000), end: null, notes:'' },
+    { machineId:'cnc-c2', tech:'Marco V.', issue:'Mantenimiento preventivo 4000h', status:'completed',
+      start: new Date(Date.now()-24*3600000), end: new Date(Date.now()-24*3600000+2*3600000), notes:'Cambio aceite, filtros y calibración completados.' },
+    { machineId:'press-b3', tech:'Carlos R.', issue:'Fuga aceite sello cilindro', status:'on_hold',
+      start: new Date(Date.now()-6*3600000), end: null, notes:'Esperando repuesto sello P4000-SK-44.' },
+    { machineId:'comp-a1', tech:'Ana P.', issue:'Revisión correa transmisión', status:'closed',
+      start: new Date(Date.now()-5*24*3600000), end: new Date(Date.now()-5*24*3600000+45*60000), notes:'Correa reemplazada, tensión ajustada.' },
+  ];
+  demoData.forEach((d,i) => {
+    const m = MACHINES[d.machineId]||{};
+    const dur = d.end ? Math.round((d.end-d.start)/60000) : null;
+    WO.tickets.push({
+      id: 'WO-' + String(WO.nextNum++).padStart(4,'0'),
+      machineId: d.machineId, machineName: m.name||d.machineId, machineModel: m.model||'',
+      category: m.cat||'', technician: d.tech, issueDesc: d.issue,
+      status: d.status, priority: i%3===0?'high':'medium',
+      createdAt: d.start, startedAt: d.start, completedAt: d.end, closedAt: d.end,
+      sessionId: 'DEMO-'+i, notes: d.notes, actions:[], duration: dur,
+    });
+  });
+}
+
+// ── DASHBOARD RENDER ──────────────────────────────────────────
+function loadDashboardData() {
+  seedDemoTickets();
+  // Try to fetch from API
+  callAPI('GET', '/v1/reports/dashboard?from='+new Date(Date.now()-30*24*3600000).toISOString().slice(0,10)+'&to='+new Date().toISOString().slice(0,10), null)
+    .then(r => {
+      if (r?.data) {
+        // merge API data with local
+      }
+    }).catch(()=>{});
+  renderDashboard();
+}
+
+function renderDashboardLive() {
+  if (S.currentScreen === 'dashboard') renderDashboard();
+}
+
+function renderDashboard() {
+  const tickets = WO.tickets;
+  const open      = tickets.filter(t=>!['completed','closed'].includes(t.status));
+  const completed = tickets.filter(t=>['completed','closed'].includes(t.status));
+  const inProg    = tickets.filter(t=>t.status==='in_progress');
+  const durArr    = completed.filter(t=>t.duration!=null).map(t=>t.duration);
+  const avgMTTR   = durArr.length ? Math.round(durArr.reduce((a,b)=>a+b,0)/durArr.length) : 0;
+
+  document.getElementById('kpi-total').textContent     = tickets.length;
+  document.getElementById('kpi-total-d').textContent   = `↑ ${tickets.length} en el período`;
+  document.getElementById('kpi-open').textContent      = open.length;
+  document.getElementById('kpi-open-d').textContent    = `${inProg.length} en progreso activo`;
+  document.getElementById('kpi-completed').textContent = completed.length;
+  document.getElementById('kpi-comp-d').textContent    = `${completed.length} resueltas`;
+  document.getElementById('kpi-mttr').textContent      = avgMTTR || '—';
+  const mttrD = document.getElementById('kpi-mttr-d');
+  if (avgMTTR) {
+    mttrD.textContent = avgMTTR <= 35 ? `✅ Dentro del objetivo (35 min)` : `⚠️ ${avgMTTR-35} min sobre objetivo`;
+    mttrD.className   = 'kpi-delta ' + (avgMTTR<=35?'up':'down');
+  }
+  document.getElementById('dash-last-refresh').textContent = 'Actualizado: '+new Date().toLocaleTimeString('es-CL');
+  renderOTTable();
+  renderTimeline();
+  renderTopMachines();
+}
+
+function filteredTickets() {
+  const statusF  = document.getElementById('dash-filter-status')?.value||'all';
+  const machineF = document.getElementById('dash-filter-machine')?.value||'all';
+  const search   = (document.getElementById('dash-search')?.value||'').toLowerCase();
+  return WO.tickets.filter(t => {
+    if (statusF !== 'all' && t.status !== statusF) return false;
+    if (machineF !== 'all' && t.machineName !== machineF) return false;
+    if (search && !(t.id.toLowerCase().includes(search) || t.machineName.toLowerCase().includes(search) || t.technician.toLowerCase().includes(search) || t.issueDesc.toLowerCase().includes(search))) return false;
+    return true;
+  });
+}
+
+function fmtDT(d) {
+  if (!d) return '—';
+  return d.toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function fmtDur(min) {
+  if (min==null) return '—';
+  if (min < 60) return min+'m';
+  return Math.floor(min/60)+'h '+( min%60)+'m';
+}
+function durClass(min) {
+  if (min==null) return '';
+  if (min <= 35) return 'fast';
+  if (min <= 60) return 'medium';
+  return 'slow';
+}
+
+function renderOTTable() {
+  const tickets = filteredTickets();
+  document.getElementById('ot-count-label').textContent = tickets.length+' registros';
+  const tbody = document.getElementById('ot-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = tickets.map(t => {
+    const liveDot = t.status==='in_progress' ? '<span class="ot-live-dot"></span>' : '';
+    return `<tr style="cursor:pointer" onclick="openOTDetail('${t.id}')">
+      <td><span class="ot-num">${t.id}</span></td>
+      <td><span class="ot-machine">${t.machineName}</span><br><span style="font-size:10px;color:var(--ink3);font-family:var(--mono)">${t.machineModel}</span></td>
+      <td style="font-size:11px;color:var(--ink2);max-width:160px">${t.issueDesc}</td>
+      <td><span class="ot-tech">${t.technician}</span></td>
+      <td><span class="ot-ts">${fmtDT(t.startedAt)}</span></td>
+      <td><span class="ot-ts">${fmtDT(t.completedAt||t.closedAt)}</span></td>
+      <td><span class="ot-dur ${durClass(t.duration)}">${fmtDur(t.duration)}${t.status==='in_progress'?'<span style="margin-left:4px;font-size:9px;color:var(--amber)">▶</span>':''}</span></td>
+      <td><span class="ot-badge ${t.status}">${liveDot}${WO_STATUS_LABEL[t.status]||t.status}</span></td>
+      <td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openOTDetail('${t.id}')" style="font-size:10px;padding:4px 8px">Ver</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--ink3);padding:24px">Sin órdenes de trabajo para los filtros seleccionados</td></tr>';
+}
+
+function renderTimeline() {
+  const bars = document.getElementById('timeline-bars');
+  if (!bars) return;
+  const tickets = WO.tickets.filter(t=>t.duration!=null).slice(0,8);
+  const maxDur  = Math.max(...tickets.map(t=>t.duration), 60);
+  bars.innerHTML = tickets.map(t => `
+    <div class="tl-row">
+      <div class="tl-label" title="${t.machineName}">${t.id}</div>
+      <div class="tl-bar-bg">
+        <div class="tl-bar" style="width:${Math.round(t.duration/maxDur*100)}%;background:${t.duration<=35?'var(--green)':t.duration<=60?'var(--amber)':'#c0281e'}"></div>
+        <span class="tl-bar-label">${fmtDur(t.duration)}</span>
+      </div>
+      <div class="tl-time">${fmtDur(t.duration)}</div>
+    </div>`).join('') || '<div style="color:var(--ink3);font-size:12px;text-align:center;padding:16px">Sin datos</div>';
+}
+
+function renderTopMachines() {
+  const el = document.getElementById('top-machines-list');
+  if (!el) return;
+  const counts = {};
+  WO.tickets.forEach(t => { counts[t.machineName] = (counts[t.machineName]||0)+1; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxC = sorted[0]?.[1]||1;
+  el.innerHTML = sorted.map(([name,count],i)=>`
+    <div class="tm-row">
+      <div class="tm-rank">${i+1}</div>
+      <div class="tm-info">
+        <div class="tm-name">${name}</div>
+        <div class="tm-count">${count} OT${count!==1?'s':''}</div>
+      </div>
+      <div class="tm-bar-mini"><div class="tm-bar-fill" style="width:${Math.round(count/maxC*100)}%"></div></div>
+    </div>`).join('');
+}
+
+async function refreshDashboard() {
+  const icon = document.getElementById('refresh-icon');
+  if (icon) icon.classList.add('spinning');
+  await new Promise(r=>setTimeout(r,600));
+  loadDashboardData();
+  if (icon) icon.classList.remove('spinning');
+}
+
+// ── OT DETAIL MODAL ───────────────────────────────────────────
+function openOTDetail(id) {
+  const t = WO.tickets.find(t=>t.id===id);
+  if (!t) return;
+  WO.selectedId = id;
+
+  document.getElementById('ot-detail-num').textContent   = t.id;
+  document.getElementById('ot-detail-title').textContent = t.machineName + ' — ' + t.issueDesc;
+
+  // Status strip
+  const statuses = ['created','assigned','in_progress','on_hold','completed','closed'];
+  const curIdx = statuses.indexOf(t.status);
+  const strip = document.getElementById('ot-status-strip');
+  strip.innerHTML = statuses.filter(s=>s!=='on_hold').map((s,i)=>{
+    const realIdx = statuses.indexOf(s);
+    const done   = realIdx < curIdx;
+    const active = s === t.status;
+    const isLast = i === 4;
+    return `<div class="ots-step">
+      ${!isLast?`<div class="ots-line ${done||active?'done':''}"></div>`:''}
+      <div class="ots-dot ${done?'done':active?'active':''}"></div>
+      <div class="ots-label">${WO_STATUS_LABEL[s]}</div>
+    </div>`;
+  }).join('');
+
+  // Detail grid
+  document.getElementById('ot-detail-grid').innerHTML = `
+    <div class="ot-detail-field"><div class="ot-detail-label">Máquina</div><div class="ot-detail-val">${t.machineName} (${t.machineModel})</div></div>
+    <div class="ot-detail-field"><div class="ot-detail-label">Técnico</div><div class="ot-detail-val">${t.technician}</div></div>
+    <div class="ot-detail-field"><div class="ot-detail-label">Estado</div><div class="ot-detail-val"><span class="ot-badge ${t.status}">${WO_STATUS_LABEL[t.status]}</span></div></div>
+    <div class="ot-detail-field"><div class="ot-detail-label">Prioridad</div><div class="ot-detail-val" style="font-weight:600;color:${t.priority==='high'?'#c0281e':'var(--amber)'}">${t.priority==='high'?'Alta':'Media'}</div></div>
+    <div class="ot-detail-field"><div class="ot-detail-label">Inicio</div><div class="ot-detail-val" style="font-family:var(--mono);font-size:12px">${fmtDT(t.startedAt)}</div></div>
+    <div class="ot-detail-field"><div class="ot-detail-label">Cierre</div><div class="ot-detail-val" style="font-family:var(--mono);font-size:12px">${fmtDT(t.completedAt||t.closedAt)}</div></div>
+    <div class="ot-detail-field"><div class="ot-detail-label">Duración</div><div class="ot-detail-val ot-dur ${durClass(t.duration)}" style="font-family:var(--mono)">${fmtDur(t.duration)}</div></div>
+    <div class="ot-detail-field"><div class="ot-detail-label">Session ID</div><div class="ot-detail-val" style="font-family:var(--mono);font-size:11px">${t.sessionId}</div></div>
+  `;
+  document.getElementById('ot-detail-notes').innerHTML = t.notes
+    ? `<strong>Notas:</strong> ${t.notes}${t.actions?.length?'<br><strong>Acciones:</strong> '+t.actions.join('; '):''}` : '';
+
+  const nextBtn = document.getElementById('ot-detail-status-btn');
+  const curStatusIdx = WO_STATUSES.indexOf(t.status);
+  const nextStatus   = WO_STATUSES[curStatusIdx+1];
+  if (nextStatus && !['closed'].includes(t.status)) {
+    nextBtn.textContent = `→ ${WO_STATUS_LABEL[nextStatus]}`;
+    nextBtn.style.display = 'inline-flex';
+  } else {
+    nextBtn.style.display = 'none';
+  }
+
+  document.getElementById('ot-detail-modal').classList.add('open');
+}
+
+function closeOTDetail() {
+  document.getElementById('ot-detail-modal').classList.remove('open');
+}
+
+function advanceOTStatus() {
+  const t = WO.tickets.find(t=>t.id===WO.selectedId);
+  if (!t) return;
+  const curIdx = WO_STATUSES.indexOf(t.status);
+  if (curIdx < WO_STATUSES.length-1) {
+    t.status = WO_STATUSES[curIdx+1];
+    if (t.status==='completed') { t.completedAt=new Date(); t.duration=Math.round((t.completedAt-t.startedAt)/60000); }
+    if (t.status==='closed')    { t.closedAt=new Date(); }
+    if (t.apiId) callAPI('PATCH',`/v1/work-orders/${t.apiId}/status`,{status:t.status}).catch(()=>{});
+  }
+  closeOTDetail();
+  renderDashboard();
+  showToast(`OT ${t.id} → ${WO_STATUS_LABEL[t.status]}`);
+}
+
+function exportOT() {
+  const t = WO.tickets.find(t=>t.id===WO.selectedId);
+  if (!t) return;
+  showToast(`📄 Exportando ${t.id} — GET /v1/reports/export?type=work_order&id=${t.apiId||t.id}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('doc-input').addEventListener('keydown', e=>{
+  if (e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendDocMessage(); }
+});
+document.getElementById('doc-input').addEventListener('input', function(){
+  this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,100)+'px';
+});
+document.getElementById('debug-input').addEventListener('keydown', e=>{
+  if (e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendDebugMessage(); }
+});
+document.getElementById('debug-input').addEventListener('input', function(){
+  this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,100)+'px';
+});
+document.getElementById('plant-select').addEventListener('change', ()=>{
+  updateContextBar();
+  callAPI('GET',`/api/plants`).catch(()=>{});
+});
+document.getElementById('settings-modal').addEventListener('click', e=>{
+  if (e.target===document.getElementById('settings-modal')) closeSettings();
+});
+document.getElementById('ot-detail-modal').addEventListener('click', e=>{
+  if (e.target===document.getElementById('ot-detail-modal')) closeOTDetail();
+});
+
+// Initial API test
+setTimeout(testAPIConnection, 600);
+</script>
+</body>
+</html>

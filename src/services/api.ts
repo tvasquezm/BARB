@@ -1,0 +1,48 @@
+import { WorkOrder, User, Message } from '../types'
+
+type ApiService = ReturnType<typeof createApiService>
+
+async function callAPI<T>(base: string, path: string, opts?: RequestInit): Promise<T> {
+  const url = base + path
+  const headers = { 'Content-Type': 'application/json', ...(opts?.headers as any) }
+  const res = await fetch(url, { credentials: 'include', ...opts, headers })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(text || res.statusText)
+  }
+  // Try parse JSON, otherwise return empty
+  const txt = await res.text()
+  try { return JSON.parse(txt) as T } catch { return (txt as unknown) as T }
+}
+
+export const createApiService = (apiBase = '/api', lmBase = '/lm') => {
+  return {
+    auth: {
+      login: async (username: string, password: string, role?: string) =>
+        callAPI<User>(apiBase, '/auth/login', { method: 'POST', body: JSON.stringify({ username, password, role }) }),
+      logout: async () => callAPI<any>(apiBase, '/auth/logout', { method: 'POST' }),
+    },
+    health: async () => callAPI<any>(apiBase, '/health', { method: 'GET' }),
+    disciplines: async (plantId?: string) => callAPI<any>(apiBase, `/disciplines${plantId?`?plantId=${encodeURIComponent(plantId)}`:''}`, { method: 'GET' }),
+    plants: async () => callAPI<any>(apiBase, '/plants', { method: 'GET' }),
+    chat: {
+      documents: async (payload: any) => callAPI<any>(apiBase, '/chat/documents', { method: 'POST', body: JSON.stringify(payload) }),
+      debug: async (payload: any) => callAPI<any>(apiBase, '/chat/debug', { method: 'POST', body: JSON.stringify(payload) }),
+    },
+    debug: {
+      startSession: async (payload: any) => callAPI<any>(apiBase, '/debug/sessions', { method: 'POST', body: JSON.stringify(payload) }),
+    },
+    reports: {
+      send: async (payload: any) => callAPI<any>(apiBase, '/reports/debug', { method: 'POST', body: JSON.stringify(payload) }),
+      upload: async (payload: any) => callAPI<any>(apiBase, '/reports/upload', { method: 'POST', body: JSON.stringify(payload) }),
+    },
+    user: {
+      savePreferences: async (payload: any) => callAPI<any>(apiBase, '/user/preferences', { method: 'PUT', body: JSON.stringify(payload) }),
+    },
+    lmBase,
+  }
+}
+
+export type { ApiService }
+
+export default createApiService
