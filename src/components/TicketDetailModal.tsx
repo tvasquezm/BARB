@@ -7,9 +7,10 @@ interface Props {
   ticket: WorkOrder | null
   onClose: () => void
   onUpdateStatus: (id: string, status: WorkOrder['status']) => void
+  onDelete: (id: string) => Promise<void> | void
 }
 
-const TicketDetailModal: React.FC<Props> = ({ ticket, onClose, onUpdateStatus }) => {
+const TicketDetailModal: React.FC<Props> = ({ ticket, onClose, onUpdateStatus, onDelete }) => {
   if (!ticket) return null
 
   const statusOrder = WO_STATUSES
@@ -32,6 +33,20 @@ const TicketDetailModal: React.FC<Props> = ({ ticket, onClose, onUpdateStatus })
   }
 
   const closeTicket = () => onUpdateStatus(ticket.id, 'closed')
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(`¿Eliminar la OT ${ticket.id}?`)
+    if (!confirmed) return
+
+    try {
+      await onDelete(ticket.id)
+      onClose()
+      showToast('🗑️ OT eliminada correctamente')
+    } catch (error) {
+      console.error('Error deleting work order from modal', error)
+      showToast('❌ No se pudo eliminar la OT')
+    }
+  }
 
   return (
     <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
@@ -75,6 +90,9 @@ const TicketDetailModal: React.FC<Props> = ({ ticket, onClose, onUpdateStatus })
             <button className="btn btn-outline btn-sm" onClick={onClose}>Cerrar</button>
             <button className="btn btn-sm" style={{ background: 'var(--accent)', color: '#fff' }} onClick={exportPdf}>📄 Exportar PDF</button>
             <button className="btn btn-sm btn-outline" disabled={currentIndex === statusOrder.length - 1} onClick={() => { advance(); showToast(`OT Avanzada →`); }}>Avanzar estado →</button>
+            <button className="btn btn-sm btn-outline" style={{ color: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => { void handleDelete() }}>
+              Eliminar OT
+            </button>
           </div>
         </div>
       </div>

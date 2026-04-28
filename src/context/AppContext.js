@@ -1,5 +1,5 @@
 import { jsx as _jsx } from "react/jsx-runtime";
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 const defaultState = {
     currentScreen: 'login',
     dark: false,
@@ -21,15 +21,29 @@ const defaultState = {
         '/lm',
     loading: false,
 };
+const readStoredString = (key, fallback) => {
+    if (typeof window === 'undefined')
+        return fallback;
+    const value = window.localStorage.getItem(key);
+    return value === null ? fallback : value;
+};
+const readStoredBoolean = (key, fallback) => {
+    if (typeof window === 'undefined')
+        return fallback;
+    const value = window.localStorage.getItem(key);
+    if (value === null)
+        return fallback;
+    return value === 'true';
+};
 const AppContext = createContext(undefined);
 export const AppProvider = ({ children }) => {
-    const [currentScreen, setCurrentScreen] = useState(defaultState.currentScreen);
-    const [dark, setDark] = useState(defaultState.dark);
-    const [lang, setLang] = useState(defaultState.lang);
-    const [discipline, setDiscipline] = useState(defaultState.discipline);
-    const [docMachine, setDocMachine] = useState(defaultState.docMachine);
-    const [plant, setPlant] = useState(defaultState.plant);
-    const [selectedMachine, setSelectedMachine] = useState(defaultState.selectedMachine);
+    const [currentScreen, setCurrentScreen] = useState(() => readStoredString('barb.currentScreen', defaultState.currentScreen) ?? defaultState.currentScreen);
+    const [dark, setDark] = useState(() => readStoredBoolean('barb.dark', defaultState.dark));
+    const [lang, setLang] = useState(() => readStoredString('barb.lang', defaultState.lang) ?? defaultState.lang);
+    const [discipline, setDiscipline] = useState(() => readStoredString('barb.discipline', defaultState.discipline));
+    const [docMachine, setDocMachine] = useState(() => readStoredString('barb.docMachine', defaultState.docMachine) ?? defaultState.docMachine);
+    const [plant, setPlant] = useState(() => readStoredString('barb.plant', defaultState.plant) ?? defaultState.plant);
+    const [selectedMachine, setSelectedMachine] = useState(() => readStoredString('barb.selectedMachine', defaultState.selectedMachine));
     const [sessionId, setSessionId] = useState(defaultState.sessionId);
     const [sessionStart, setSessionStart] = useState(defaultState.sessionStart);
     const [docMessages, setDocMessages] = useState(defaultState.docMessages);
@@ -40,6 +54,47 @@ export const AppProvider = ({ children }) => {
     const [loading, setLoading] = useState(defaultState.loading);
     const pushDocMessage = useCallback((m) => setDocMessages(prev => [...prev, m]), []);
     const pushDebugMessage = useCallback((m) => setDebugMessages(prev => [...prev, m]), []);
+    useEffect(() => {
+        if (typeof window === 'undefined')
+            return;
+        window.localStorage.setItem('barb.currentScreen', currentScreen);
+    }, [currentScreen]);
+    useEffect(() => {
+        if (typeof window === 'undefined')
+            return;
+        window.localStorage.setItem('barb.dark', String(dark));
+    }, [dark]);
+    useEffect(() => {
+        if (typeof window === 'undefined')
+            return;
+        window.localStorage.setItem('barb.lang', lang);
+    }, [lang]);
+    useEffect(() => {
+        if (typeof window === 'undefined')
+            return;
+        if (discipline)
+            window.localStorage.setItem('barb.discipline', discipline);
+        else
+            window.localStorage.removeItem('barb.discipline');
+    }, [discipline]);
+    useEffect(() => {
+        if (typeof window === 'undefined')
+            return;
+        window.localStorage.setItem('barb.docMachine', docMachine);
+    }, [docMachine]);
+    useEffect(() => {
+        if (typeof window === 'undefined')
+            return;
+        window.localStorage.setItem('barb.plant', plant);
+    }, [plant]);
+    useEffect(() => {
+        if (typeof window === 'undefined')
+            return;
+        if (selectedMachine)
+            window.localStorage.setItem('barb.selectedMachine', selectedMachine);
+        else
+            window.localStorage.removeItem('barb.selectedMachine');
+    }, [selectedMachine]);
     const value = {
         currentScreen,
         dark,
