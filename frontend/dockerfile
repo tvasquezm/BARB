@@ -1,0 +1,6 @@
+FROM nginx:alpine
+# Copiamos tus archivos HTML a la carpeta pública de Nginx
+COPY . /usr/share/nginx/html/
+# Renombramos barb.html para que sea la página de inicio por defecto
+RUN mv /usr/share/nginx/html/barb.html /usr/share/nginx/html/index.html
+EXPOSE 80
