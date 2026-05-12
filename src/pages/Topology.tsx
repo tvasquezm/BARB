@@ -3,7 +3,9 @@ import PlantTopology from '../components/PlantTopology'
 
 const Topology: React.FC = () => {
   return (
-    <PlantTopology />
+    <div className="w-full h-full min-w-0 overflow-x-hidden flex flex-col">
+      <PlantTopology />
+    </div>
   )
 }
 

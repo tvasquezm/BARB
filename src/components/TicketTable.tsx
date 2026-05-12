@@ -19,8 +19,8 @@ const formatDuration = (createdAt?: string, closedAt?: string) => {
 
 const TicketTable: React.FC<{ tickets: WorkOrder[]; onSelect?: (id: string) => void }> = ({ tickets, onSelect }) => {
   return (
-    <div className="ot-table-wrap">
-      <table className="ot-table">
+    <div className="ot-table-wrap overflow-x-auto md:overflow-x-visible">
+      <table className="ot-table w-full">
         <thead>
           <tr>
             <th>N° OT</th>

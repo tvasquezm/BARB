@@ -41,16 +41,12 @@ const PlantTopology: React.FC = () => {
   const t = useMemo(() => getTranslations(lang), [lang])
 
   const [viewBox, setViewBox] = useState(INITIAL_VB)
-  const [tooltip, setTooltip] = useState<{ visible: boolean; x: number; y: number; node?: MachineNode }>({
-    visible: false,
-    x: 0,
-    y: 0,
-  })
 
-  const selectedNode = useMemo(
-    () => NODES.find(node => node.id === selectedMachine) ?? null,
-    [selectedMachine],
-  )
+  // Panel de detalle (reemplaza el popover absolute)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [detailNodeId, setDetailNodeId] = useState<string | null>(null)
+
+  const selectedNode = useMemo(() => NODES.find(node => node.id === selectedMachine) ?? null, [selectedMachine])
 
   const getNode = (node: MachineNode) => {
     const machine = MACHINES[node.id as keyof typeof MACHINES]
@@ -64,28 +60,39 @@ const PlantTopology: React.FC = () => {
     }
   }
 
-  const handleNodeClick = (node: MachineNode, e: React.MouseEvent) => {
-    const rect = containerRef.current?.getBoundingClientRect()
-    const cx = e.clientX - (rect?.left || 0)
-    const cy = e.clientY - (rect?.top || 0)
+  const activeDetailNode = useMemo(() => {
+    if (!detailNodeId) return null
+    const base = NODES.find(n => n.id === detailNodeId) ?? null
+    if (!base) return null
+    return getNode(base)
+  }, [detailNodeId])
 
+  const closeDetail = () => {
+    setDetailOpen(false)
+    setDetailNodeId(null)
+  }
+
+  const handleNodeClick = (node: MachineNode) => {
     setSelectedMachine(node.id)
-    setTooltip({ visible: true, x: cx, y: cy, node })
+    setDetailNodeId(node.id)
+    setDetailOpen(true)
   }
 
   const goToDebug = (nodeId?: string) => {
-    const machineId = nodeId ?? tooltip.node?.id ?? selectedMachine
+    const machineId = nodeId ?? detailNodeId ?? selectedMachine
     if (machineId) setSelectedMachine(machineId)
     navigate('/debug')
+    closeDetail()
   }
 
   const goToDocs = (nodeId?: string) => {
-    const machineId = nodeId ?? tooltip.node?.id ?? selectedMachine
+    const machineId = nodeId ?? detailNodeId ?? selectedMachine
     if (machineId) {
       setSelectedMachine(machineId)
       setDocMachine(machineId)
     }
     navigate('/docchat')
+    closeDetail()
   }
 
   const zoom = (factor: number) => {
@@ -97,8 +104,6 @@ const PlantTopology: React.FC = () => {
   }
 
   const reset = () => setViewBox(INITIAL_VB)
-
-  const closeTooltip = () => setTooltip({ visible: false, x: 0, y: 0 })
 
   return (
     <div className="topology-body h-full" ref={containerRef}>
@@ -146,7 +151,7 @@ const PlantTopology: React.FC = () => {
                 key={node.id}
                 transform={`translate(${node.x},${node.y})`}
                 style={{ cursor: 'pointer' }}
-                onClick={e => handleNodeClick(node, e)}
+                onClick={() => handleNodeClick(baseNode)}
               >
                 <rect
                   x={0}
@@ -173,51 +178,121 @@ const PlantTopology: React.FC = () => {
           })}
         </svg>
 
-        {tooltip.visible && tooltip.node && (
+        {/* Overlay + panel lateral/drawer/bottom sheet */}
+        {detailOpen && activeDetailNode && (
           <div
+            className="topology-detail-overlay"
             style={{
-              position: 'absolute',
-              left: Math.min(tooltip.x + 12, 640),
-              top: Math.min(tooltip.y + 12, 360),
-              zIndex: 60,
-              minWidth: 240,
-              maxWidth: 320,
-              background: 'var(--surface)',
-              color: 'var(--ink)',
-              border: '1px solid var(--border)',
-              borderRadius: 14,
-              boxShadow: 'var(--shadow-lg)',
-              padding: 14,
-              backdropFilter: 'blur(10px)',
+              position: 'fixed',
+              inset: 0,
+              zIndex: 80,
+              background: 'rgba(0,0,0,0.35)',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'stretch',
             }}
+            onClick={closeDetail}
+            role="presentation"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ fontSize: 20 }}>{tooltip.node.icon}</div>
-              <div style={{ fontWeight: 700 }}>{tooltip.node.name}</div>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--ink3)' }}>
-              {tooltip.node.cat} · {tooltip.node.status}
-            </div>
+            {/* Panel desktop (right) */}
             <div
+              className="topology-detail-panel"
               style={{
-                marginTop: 12,
-                display: 'grid',
-                gap: 8,
-                gridTemplateColumns: '1fr 1fr',
+                width: '20rem' /* ~w-80 */,
+                background: 'var(--surface)',
+                height: '100%',
+                boxShadow: 'var(--shadow-lg)',
+                borderLeft: '1px solid var(--border)',
+                padding: 14,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                transform: 'translateX(0)',
               }}
+              onClick={e => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
             >
-              <button className="btn btn-sm btn-primary" onClick={() => goToDebug(tooltip.node?.id)}>
-                {t.topology.goToDebug}
-              </button>
-              <button className="btn btn-sm btn-outline" onClick={() => goToDocs(tooltip.node?.id)}>
-                {t.topology.openDocs}
-              </button>
-              <button className="btn btn-sm btn-outline" style={{ gridColumn: '1 / -1' }} onClick={closeTooltip}>
-                {t.topology.close}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ fontSize: 22 }}>{activeDetailNode.icon}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--ink)', wordBreak: 'break-word' }}>
+                    {activeDetailNode.name}
+                  </div>
+                  <div style={{ marginTop: 2, fontSize: 12, color: 'var(--ink3)' }}>
+                    {activeDetailNode.cat} · {activeDetailNode.status}
+                  </div>
+                </div>
+                <div style={{ marginLeft: 'auto' }}>
+                  <button
+                    className="btn btn-outline btn-sm"
+                    style={{ padding: 8 }}
+                    onClick={closeDetail}
+                    aria-label={t.topology.close}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ overflowY: 'auto', minHeight: 0, paddingRight: 6 }}>
+                <div className="diagnostic-block" style={{ marginTop: 0 }}>
+                  <div className="diag-title">{lang === 'es' ? 'Detalle' : 'Details'}</div>
+                  <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+                    <div className="diag-item" style={{ padding: 0 }}>
+                      <span style={{ color: 'var(--amber)' }}>●</span>
+                      <span>Equipo: <span style={{ fontFamily: 'var(--mono)', color: 'var(--ink)' }}>{activeDetailNode.id}</span></span>
+                    </div>
+                    <div className="diag-item" style={{ padding: 0 }}>
+                      <span style={{ color: 'var(--blue)' }}>●</span>
+                      <span>Estado: <span style={{ fontFamily: 'var(--mono)', color: 'var(--ink)' }}>{activeDetailNode.status}</span></span>
+                    </div>
+                    <div className="diag-item" style={{ padding: 0 }}>
+                      <span style={{ color: 'var(--green)' }}>●</span>
+                      <span>Categoría: <span style={{ fontFamily: 'var(--mono)', color: 'var(--ink)' }}>{activeDetailNode.cat}</span></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="action-block">
+                  <div className="action-title">{lang === 'es' ? 'Acciones' : 'Actions'}</div>
+                  <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+                    <button className="btn btn-sm btn-primary" onClick={() => goToDebug(activeDetailNode.id)}>
+                      {t.topology.goToDebug}
+                    </button>
+                    <button className="btn btn-sm btn-outline" onClick={() => goToDocs(activeDetailNode.id)}>
+                      {t.topology.openDocs}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink3)' }}>
+                  {isNaN(activeDetailNode.x) ? '' : ''}
+                </div>
+              </div>
             </div>
+
+            {/* Bottom sheet mobile */}
+            <div
+              className="topology-detail-sheet"
+              style={{
+                display: 'none',
+              }}
+            />
           </div>
         )}
+
+        {/* Mobile bottom sheet via CSS class toggles */}
+        <style>
+          {`
+            @media (max-width: 767px) {
+              .topology-detail-overlay { justify-content: center; align-items: flex-end; }
+              .topology-detail-panel { width: 100% !important; max-height: 68vh; border-left: none !important; border-radius: 16px 16px 0 0; padding: 14px; }
+            }
+          `}
+        </style>
       </div>
     </div>
   )

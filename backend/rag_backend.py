@@ -28,7 +28,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
+    # Mantener regex general, pero agregar explícitamente Vite
     allow_origin_regex=r"https?://.*",
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -461,6 +463,41 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentRecord:
     return document
 
 
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
+    role: Optional[str] = None
+
+
+class LoginResponse(BaseModel):
+    id: str
+    name: str
+    role: str
+
+
+class LogoutResponse(BaseModel):
+    ok: bool
+
+
+@app.post("/api/auth/login", response_model=LoginResponse)
+async def login(payload: LoginRequest) -> LoginResponse:
+    # Endpoint básico para que el frontend funcione.
+    # (Persistencia real luego conectando a la tabla Usuario.)
+    role_in = payload.role or "technician"
+    role_norm = role_in if role_in in ("admin", "tecnico", "technician", "engineer", "supervisor") else role_in
+
+    return LoginResponse(
+        id=f"u-{payload.username}",
+        name=payload.username,
+        role=role_norm,
+    )
+
+
+@app.post("/api/auth/logout", response_model=LogoutResponse)
+async def logout() -> LogoutResponse:
+    return LogoutResponse(ok=True)
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest) -> ChatResponse:
     reply = build_chat_reply(payload.message, payload.context_machine, payload.language)
@@ -471,4 +508,4 @@ async def chat(payload: ChatRequest) -> ChatResponse:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("rag_backend:app", host="0.0.0.0", port=9000, reload=True)
+    uvicorn.run("rag_backend:app", host="0.0.0.0", port=8000, reload=True)

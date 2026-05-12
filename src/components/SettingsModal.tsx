@@ -42,9 +42,67 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
     onClose()
   }
 
-  const testConnections = () => {
+  /**
+   * Realiza un "handshake" liviano contra LM Studio verificando que el servidor responde
+   * al endpoint equivalente a OpenAI-compatible `GET /models`.
+   *
+   * - Normaliza `localLm` (trim + remueve slash final)
+   * - Asegura URL absoluta (si no trae protocolo, antepone `http://`)
+   * - Si `localLm` termina en `/v1` -> prueba `${base}/models`
+   *   Si no -> prueba `${base}/v1/models`
+   * - Aplica AbortSignal.timeout(3000) para evitar requests colgadas/stalled
+   * - Usa headers para asegurar respuesta fresca y parseable
+   * - Maneja errores: TimeoutError y TypeError (para logs diferenciados en dev)
+   */
+  const testConnections = async () => {
     showToast(t.settings.testingConnections)
-    window.setTimeout(() => showToast(t.settings.apiOkLmOffline), 1500)
+
+    const normalizedLm = (localLm || '')
+      .trim()
+      .replace(/\/+$/, '') // elimina slashes finales
+
+    if (!normalizedLm) {
+      showToast(t.settings.apiOkLmOffline)
+      return
+    }
+
+    const baseUrl = /^https?:\/\//i.test(normalizedLm) ? normalizedLm : `http://${normalizedLm}`
+    const handshakeUrl = baseUrl.includes('/v1')
+      ? baseUrl.endsWith('/v1') ? `${baseUrl}/models` : baseUrl.replace(/\/v1\/+$/i, '') + '/v1/models'
+      : `${baseUrl}/v1/models`
+
+    const acceptHeaders = {
+      Accept: 'application/json',
+      'Cache-Control': 'no-cache',
+    } as const
+
+    try {
+      const res = await fetch(handshakeUrl, {
+        method: 'GET',
+        headers: acceptHeaders,
+        cache: 'no-store',
+        signal: AbortSignal.timeout(3000),
+      })
+
+      if (res.ok) {
+        showToast(t.settings.apiOkLmOk)
+        return
+      }
+
+      // Servidor respondió con error 4xx/5xx
+      showToast(t.settings.apiOkLmOffline)
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'TimeoutError') {
+        // Timeout explícito por AbortSignal.timeout
+        if (import.meta.env.DEV) console.debug('[LMStudio handshake] TimeoutError', err)
+      } else if (err instanceof TypeError) {
+        // Red/CORS/Network failure típicamente aparece como TypeError
+        if (import.meta.env.DEV) console.debug('[LMStudio handshake] TypeError', err)
+      } else {
+        if (import.meta.env.DEV) console.debug('[LMStudio handshake] Unknown error', err)
+      }
+      showToast(t.settings.apiOkLmOffline)
+    }
   }
 
   return (
@@ -130,7 +188,7 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                   onChange={(event) => setLocalApi(event.target.value)}
                   title={t.settings.fastApiEndpoint}
                   aria-label={t.settings.fastApiEndpoint}
-                  placeholder="http://localhost:9000/api"
+                  placeholder="http://127.0.0.1:8000/api"
                   style={{ maxWidth: 190, fontFamily: 'var(--mono)', fontSize: 10, padding: '5px 8px' }}
                 />
               </div>

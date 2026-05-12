@@ -37,7 +37,7 @@ interface ApiWorkOrder {
   closed_at?: string | null
 }
 
-const API_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:9000/api').replace(/\/$/, '')
+const API_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? 'http://127.0.0.1:8000/api').replace(/\/$/, '')
 
 const STATUS_TO_INTERNAL: Record<ApiWorkOrderStatus, WorkOrder['status']> = {
   Open: 'open',
@@ -486,10 +486,11 @@ const Dashboard: React.FC = () => {
         <TicketTable tickets={filtered} onSelect={handleSelect} />
       )}
 
-      <div className="dash-bottom">
-        <div className="timeline-card">
+      {/* Fase 1: cero scroll horizontal → apilar vertical */}
+      <div className="flex flex-col gap-16 w-full">
+        <div className="timeline-card w-full">
           <div className="dash-section-title">{t.dashboard.chartResolution} <span>duración real</span></div>
-          <div style={{ height: 260 }}>
+          <div className="w-full min-h-[300px]" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={resolutionData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(127,127,127,0.18)" />
@@ -502,14 +503,24 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="top-machines-card">
+        <div className="top-machines-card w-full">
           <div className="dash-section-title">{t.dashboard.chartMachines} <span>período</span></div>
-          <div style={{ height: 260 }}>
+          <div className="w-full min-h-[300px]" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={machineData} dataKey="value" nameKey="name" innerRadius={52} outerRadius={90} paddingAngle={3}>
+                <Pie
+                  data={machineData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={52}
+                  outerRadius={90}
+                  paddingAngle={3}
+                >
                   {machineData.map((entry, index) => (
-                    <Cell key={`cell-${entry.name}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'][index % 6]} />
+                    <Cell
+                      key={`cell-${entry.name}`}
+                      fill={['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'][index % 6]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -520,10 +531,10 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="dash-bottom" style={{ marginTop: 16 }}>
-        <div className="timeline-card">
+      <div className="flex flex-col gap-16 w-full" style={{ marginTop: 16 }}>
+        <div className="timeline-card w-full">
           <div className="dash-section-title">{t.dashboard.chartStatus} <span>OTs actuales</span></div>
-          <div style={{ height: 260 }}>
+          <div className="w-full min-h-[300px]" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusData} layout="vertical" margin={{ left: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(127,127,127,0.18)" />
@@ -540,9 +551,9 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="top-machines-card">
+        <div className="top-machines-card w-full">
           <div className="dash-section-title">Top máquinas con fallas <span>período</span></div>
-          <div>
+          <div className="w-full">
             {topMachines.length === 0 ? (
               <div style={{ color: 'var(--ink3)', fontSize: '12px', textAlign: 'center', padding: '16px' }}>
                 {t.dashboard.noData}
