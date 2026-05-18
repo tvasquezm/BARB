@@ -11,3 +11,8 @@ pysqlite3-binary==0.5.2.post3
 pypdf==4.1.0
 docx2txt==0.8
 sentence-transformers==2.6.0
+python-multipart
+sqlalchemy==2.0.30
+psycopg==3.1.19
+psycopg-binary==3.1.19
+psycopg2-binary==2.9.9

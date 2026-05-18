@@ -4,6 +4,8 @@ services:
   # Base de Datos Relacional para Usuarios y Máquinas
   db:
     image: postgres:15-alpine
+    container_name: barb_postgres_db
+    restart: always
     environment:
       POSTGRES_USER: barb_admin
       POSTGRES_PASSWORD: barb_password123
@@ -11,8 +13,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: always
+      - ./init-scripts:/docker-entrypoint-initdb.d
 
   # Tu API en Python (RAG y Microservicios)
   backend:
@@ -21,6 +22,7 @@ services:
       - "9000:8001"
     environment:
       - DATABASE_URL=postgresql://barb_admin:barb_password123@db:5432/barb_database
+      - LM_STUDIO_URL=http://host.docker.internal:1234/v1
     volumes:
       # Sincroniza tu código en vivo
       - ./backend:/app
@@ -29,13 +31,15 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  # Tu Interfaz Web Estática
+
   frontend:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: frontend/dockerfile
+    container_name: barb_main_frontend
     ports:
       - "80:80"
     depends_on:
       - backend
-
 volumes:
   postgres_data:

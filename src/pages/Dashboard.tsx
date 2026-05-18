@@ -285,16 +285,25 @@ const Dashboard: React.FC = () => {
 
   const handleCreateWorkOrder = async (payload: WorkOrderCreatePayload) => {
     try {
+      const formData = new FormData()
+      formData.append('title', payload.title)
+      formData.append('machine', payload.machine)
+      formData.append('priority', payload.priority)
+      formData.append('status', payload.status)
+      formData.append('description', payload.description)
+
+      // Nuevo: disciplina / técnico (para cuando el backend lo requiera)
+      formData.append('disciplinaId', payload.disciplinaId)
+      formData.append('tecnicoId', payload.tecnicoId)
+
+      if (payload.photoFile) {
+        formData.append('photo', payload.photoFile, payload.photoFile.name)
+      }
+
       const response = await fetch(`${API_URL}/work-orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: payload.title,
-          machine: payload.machine,
-          priority: payload.priority,
-          status: payload.status,
-          description: payload.description,
-        }),
+        body: formData,
+        // No setear Content-Type manualmente con FormData
       })
 
       if (!response.ok) {
