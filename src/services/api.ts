@@ -15,7 +15,7 @@ async function callAPI<T>(base: string, path: string, opts?: RequestInit): Promi
   try { return JSON.parse(txt) as T } catch { return (txt as unknown) as T }
 }
 
-export const createApiService = (apiBase = '/api', lmBase = '/lm') => {
+export const createApiService = (apiBase = 'http://localhost:9000/api', lmBase = '/lm') => {
   return {
     auth: {
       login: async (username: string, password: string, role?: string) =>
@@ -24,6 +24,13 @@ export const createApiService = (apiBase = '/api', lmBase = '/lm') => {
     },
     health: async () => callAPI<any>(apiBase, '/health', { method: 'GET' }),
     disciplines: async (plantId?: string) => callAPI<any>(apiBase, `/disciplines${plantId?`?plantId=${encodeURIComponent(plantId)}`:''}`, { method: 'GET' }),
+    technicians: async () => callAPI<any>(apiBase, '/technicians', { method: 'GET' }),
+    machines: async (disciplineId?: string) =>
+      callAPI<any>(
+        apiBase,
+        `/machines${disciplineId ? `?discipline_id=${encodeURIComponent(disciplineId)}` : ''}`,
+        { method: 'GET' }
+      ),
     plants: async () => callAPI<any>(apiBase, '/plants', { method: 'GET' }),
     chat: {
       documents: async (payload: any) => callAPI<any>(apiBase, '/chat/documents', { method: 'POST', body: JSON.stringify(payload) }),

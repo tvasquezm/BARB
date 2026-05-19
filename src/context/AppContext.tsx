@@ -17,7 +17,7 @@ const defaultState = {
   apiBase:
     (import.meta.env.VITE_API_URL as string | undefined) ??
     (import.meta.env.VITE_API_BASE as string | undefined) ??
-    '/api',
+    'http://localhost:9000/api',
   lmBase:
     (import.meta.env.VITE_LM_STUDIO_URL as string | undefined) ??
     (import.meta.env.VITE_LM_BASE as string | undefined) ??

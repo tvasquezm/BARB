@@ -40,11 +40,21 @@ const MACHINE_GROUPS = [
   { id: 'all', label: { es: 'Todas las máquinas', en: 'All machines' }, status: 'ok' as const },
   ...Object.entries(MACHINES).map(([id, m]) => ({
     id,
-    label:  { es: m.name, en: m.name },
-    model:  m.model,
+    label: { es: m.name, en: m.name },
+    model: m.model,
     status: m.status === 'warning' ? 'warn' : m.status === 'maintenance' ? 'maintain' : 'ok' as 'ok' | 'warn' | 'maintain',
+    cat: m.cat, // Pneumatic/Hydraulic/Mechanical/Electrical/Automation
   })),
 ]
+
+const DISCIPLINE_TO_CATS: Partial<Record<(typeof DISCIPLINES)[number]['id'], string[]>> = {
+  electrical: ['Electrical'],
+  mechanical: ['Mechanical'],
+  hydraulic: ['Hydraulic'],
+  pneumatic: ['Pneumatic'],
+  automation: ['Automation'],
+}
+
 
 const DEMO_MANUAL: ManualDoc = {
   id: 'demo-atlas',
@@ -125,6 +135,9 @@ const DocChat: React.FC = () => {
     selectedMachine, setSelectedMachine,
     user, lang,
   } = useAppContext()
+
+  const [machinesCatalog, setMachinesCatalog] = useState<Array<{ id: number; name: string }>>([])
+  const [machinesCatalogLoading, setMachinesCatalogLoading] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -256,28 +269,70 @@ const DocChat: React.FC = () => {
     if (!query || loading || !discipline) return
     setLoading(true)
     setInput('')
+
+    // Mapear la máquina seleccionada del UI (ej: "motor-d1") al ID numérico real del backend
+    let contextMachine: number | null = null
+    if (docMachine !== 'all') {
+      const selectedUi = MACHINES[docMachine]
+      const selectedName = selectedUi?.name
+      if (selectedName) {
+        if (machinesCatalog.length === 0 && !machinesCatalogLoading) {
+          setMachinesCatalogLoading(true)
+          try {
+            const r = await fetch(`${apiBase.replace(/\/$/, '')}/machines`, {
+              method: 'GET',
+              signal: AbortSignal.timeout(30_000),
+            })
+            if (r.ok) {
+              const data = await r.json() as Array<{ id: number; name: string }>
+              setMachinesCatalog(data)
+            }
+          } catch (_) { /* ignore mapping errors */ }
+          finally { setMachinesCatalogLoading(false) }
+        }
+        const match = (machinesCatalog.length ? machinesCatalog : await (async () => {
+          // fallback quick: si aún no cargó, intentar una segunda lectura
+          try {
+            const r = await fetch(`${apiBase.replace(/\/$/, '')}/machines`, { method: 'GET', signal: AbortSignal.timeout(30_000) })
+            if (r.ok) return (await r.json()) as Array<{ id: number; name: string }>
+          } catch (_) { /* ignore */ }
+          return []
+        })()) as Array<{ id: number; name: string }>
+        const found = match.find(m => m.name === selectedName)
+        if (found?.id != null) contextMachine = found.id
+      }
+    }
     const el = document.getElementById('doc-input')
     if (el) (el as HTMLTextAreaElement).style.height = 'auto'
 
     pushDocMessage({ role: 'user', content: query, timestamp: Date.now() })
 
-    // 1) Try FastAPI backend /chat
+    // 1) Try FastAPI backend /chat (real)
     try {
       const r = await fetch(`${apiBase.replace(/\/$/, '')}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: query,
-          lang: normalizeLang(lang),
-          discipline,
-          plant,
-          machine_id: docMachine !== 'all' ? docMachine : null,
+          context_machine: contextMachine,
+          language: normalizeLang(lang),
         }),
         signal: AbortSignal.timeout(30_000),
       })
+
       if (r.ok) {
         const data = await r.json() as ChatApiResponse
         pushDocMessage({ role: 'assistant', content: data.reply, timestamp: Date.now() })
+        setLoading(false)
+        return
+      }
+
+      // HTTP error (ex: 503 LM Studio apagado)
+      if (r.status === 503) {
+        const friendly = isEs
+          ? 'El asistente está desconectado temporalmente (LM Studio no está disponible). Intenta nuevamente en unos segundos.'
+          : 'The assistant is temporarily disconnected (LM Studio is not available). Please try again in a few seconds.'
+        pushDocMessage({ role: 'assistant', content: friendly, timestamp: Date.now() })
         setLoading(false)
         return
       }
@@ -333,6 +388,26 @@ const DocChat: React.FC = () => {
   const currentPlant = PLANTS.find(p => p.id === plant) ?? PLANTS[0]
   const langKey = normalizeLang(lang) as 'es' | 'en'
 
+  const filteredMachineGroups = useMemo(() => {
+    if (!discipline) return MACHINE_GROUPS
+    const cats = DISCIPLINE_TO_CATS[discipline] ?? []
+    if (!cats.length) return MACHINE_GROUPS
+    return MACHINE_GROUPS.filter(m => m.id === 'all' || cats.includes((m as any).cat))
+  }, [discipline])
+
+  useEffect(() => {
+    if (!discipline) return
+    if (!docMachine) return
+
+    if (docMachine === 'all') return
+
+    const allowed = filteredMachineGroups.some(m => m.id === docMachine)
+    if (!allowed) {
+      setDocMachine('all')
+      setSelectedMachine(null)
+    }
+  }, [discipline, docMachine, filteredMachineGroups, setDocMachine, setSelectedMachine])
+
   // ── Render ─────────────────────────────────────────────────
   return (
     <div className="two-panel w-full h-full">
@@ -366,6 +441,8 @@ const DocChat: React.FC = () => {
             type="file"
             accept=".pdf,.txt,.docx,.md"
             multiple
+            aria-label={isEs ? 'Cargar manual' : 'Upload manual'}
+            title={isEs ? 'Cargar manual PDF/TXT/MD' : 'Upload PDF/TXT/MD manual'}
             style={{ display: 'none' }}
             onChange={e => { void handleFiles(e.target.files); e.target.value = '' }}
           />
@@ -425,6 +502,7 @@ const DocChat: React.FC = () => {
             className="form-select"
             value={plant}
             onChange={e => setPlant(e.target.value)}
+            disabled={loading}
           >
             {PLANTS.map(p => <option key={p.id} value={p.id}>{p.label[langKey]}</option>)}
           </select>
@@ -440,6 +518,7 @@ const DocChat: React.FC = () => {
                 className={`disc-pill${discipline === d.id ? ' active' : ''}`}
                 data-d={d.id}
                 onClick={() => setDiscipline(discipline === d.id ? null : d.id)}
+                disabled={loading}
               >
                 <span className="disc-dot" />
                 {d.icon} {d.id.charAt(0).toUpperCase() + d.id.slice(1)}
@@ -460,6 +539,7 @@ const DocChat: React.FC = () => {
                   setDocMachine(m.id)
                   if (m.id !== 'all') setSelectedMachine(m.id)
                 }}
+                disabled={loading}
               >
                 <span className={`msi-dot ${m.status}`} />
                 <div>
@@ -553,9 +633,14 @@ const DocChat: React.FC = () => {
         {/* Input */}
         <div className="input-zone" style={{ flexShrink: 0 }}>
           <div className="input-wrap">
+            <label htmlFor="doc-input" className="sr-only">
+              {isEs ? 'Escribe tu pregunta' : 'Type your question'}
+            </label>
             <textarea
               id="doc-input"
               value={input}
+              title={isEs ? 'Escribe tu pregunta' : 'Type your question'}
+              aria-label={isEs ? 'Escribe tu pregunta para el asistente' : 'Type your question for the assistant'}
               onChange={e => { setInput(e.target.value); e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 100) + 'px' }}
               onKeyDown={handleKeyDown}
               rows={1}
@@ -564,6 +649,7 @@ const DocChat: React.FC = () => {
               className="flex-1 resize-none overflow-hidden bg-transparent border-none outline-none text-[13px] text-[var(--ink)] placeholder-[var(--ink3)]"
             />
             <button
+              title={isEs ? 'Enviar mensaje' : 'Send message'}
               aria-label={isEs ? 'Enviar' : 'Send'}
               className="send-btn"
               onClick={() => { void send() }}
