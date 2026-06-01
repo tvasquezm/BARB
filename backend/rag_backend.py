@@ -1079,6 +1079,25 @@ def get_technicians():
     except Exception:
         return []
 
+# ==========================================
+# --- Endpoint de Topología de Máquinas ---
+# ==========================================
+@app.get("/api/topologia")
+def get_topologia():
+    try:
+        with engine.connect() as conn:
+            nodos_query = text("SELECT * FROM TOPOLOGIA_NODO")
+            nodos = [dict(r) for r in conn.execute(nodos_query).mappings().all()]
+            
+            conexiones_query = text("SELECT * FROM TOPOLOGIA_CONEXION")
+            conexiones = [dict(r) for r in conn.execute(conexiones_query).mappings().all()]
+            
+            return {"nodos": nodos, "conexiones": conexiones}
+    except Exception as e:
+        print(f"Error cargando topología: {e}")
+        return {"nodos": [], "conexiones": []}
+
+
 
 @app.post("/api/chat")
 @app.post("/chat")
